@@ -70,6 +70,21 @@ Any item that cannot honour the rule states WHY in its entry.
 
 NEXT: N9 + N6pt2 (= release 2.10, next in the 'implement everything in queue' run), then N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), SPIKE-2 (PARKED — silent).
 
+### INFRA — APK built on GitHub Actions — DONE 28-Sep-2026 (no app version change)
+### Krishna 28-Sep-2026: "can you build the APK in GitHub action section?"
+- `.github/workflows/build-release.yml`: JDK 17 + Gradle 8.7 → testDebugUnitTest → signed assembleRelease
+  from 6 repository secrets (REMINDLY_KEYSTORE_BASE64, REMINDLY_STORE_PASSWORD, REMINDLY_KEY_ALIAS,
+  REMINDLY_KEY_PASSWORD, MAPS_API_KEY, GOOGLE_SERVICES_JSON) → cert SHA-1 must be A3:B9:…:5C:55 and the
+  Maps key present → artifact → on a version bump (or manual publish=on): Release v<ver> first, then
+  releases/version.json (apkUrl = Release asset) committed by github-actions[bot].
+- Triggers: push to main touching app/build.gradle.kts; manual Run workflow. Existing tag / non-higher
+  versionCode ⇒ build only, never overwrite.
+- build.gradle.kts: MAPS_API_KEY env fallback. ci/ removed (stale). publish-release.yml = local-build fallback.
+- Verified here: clean clone with no secret files + env vars only → signed APK, fingerprint check passes,
+  wrong fingerprint rejected, Maps key found, notes extracted, actionlint clean. First GitHub run stopped
+  at "Missing repository secrets" as designed — waiting on Krishna to add the 6 secrets.
+- Release flow from 2.10 on: I bump the version + notes and push; the Action builds and publishes.
+
 ### N45 — SHIPPED as v2.9 (28-Sep-2026) — queued entry kept below
 ### (was) Krishna 28-Sep-2026: "incorporate the features in the screenshot" (an 8-screen shopping-list
 ### reference: splash, lists, items, add+suggest, share, list menu, settings, dark) — queued at design
