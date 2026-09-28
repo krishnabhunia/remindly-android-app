@@ -16,3 +16,6 @@ app/build/
 *.iml
 .DS_Store
 captures/
+
+# the published build is tracked on purpose
+!releases/*.apk

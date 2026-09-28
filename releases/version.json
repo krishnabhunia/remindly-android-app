@@ -1,0 +1,10 @@
+{
+  "versionCode": 2008000,
+  "versionName": "2.8",
+  "apk": "Remindly-2.8.apk",
+  "apkUrl": "https://raw.githubusercontent.com/krishnabhunia/remindly-android-app/main/releases/Remindly-2.8.apk",
+  "sha256": "519458b9b9ab8b8ff419d3f127d4b8ee439833bbe05eb7996ae6d40973c7ac90",
+  "sizeBytes": 16347043,
+  "notes": "Delete from Scheduled alerts; every deletion cancels the full alarm set.",
+  "publishedAt": "2026-09-28"
+}
