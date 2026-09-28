@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.22 item 10: the encrypted PIN preferences must never be backed up. Its master key
+     lives in the Android Keystore and never leaves the device, so a restored copy can only
+     ever fail to decrypt (the AEADBadTagException Krishna hit). Everything else backs up. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="remindly_pin.xml" />
+    <exclude domain="sharedpref" path="remindly_pin.xml.bak" />
+    <!-- v2.02 (N33 C5): API keys never leave the device either. -->
+    <exclude domain="sharedpref" path="remindly_keys.xml" />
+    <exclude domain="sharedpref" path="remindly_keys.xml.bak" />
+</full-backup-content>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="12dp"
+    android:background="#F2FFFFFF">
+
+    <LinearLayout
+        android:id="@+id/w_open"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remindly"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:textColor="#1A237E" />
+
+        <TextView
+            android:id="@+id/w_counts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 due today · 0 overdue"
+            android:textSize="13sp"
+            android:textColor="#44444F" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/w_add"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="+ Add"
+        android:textStyle="bold" />
+</LinearLayout>

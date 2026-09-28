@@ -1,0 +1,172 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remindly 2.01 — Option D everywhere · Design Round 3</title><style>
+  :root{
+    --ink:#1B1B26; --sub:#6B6B80; --hint:#9A9AAC; --faint:#B9B9C6;
+    --surface:#F4F4F9; --card:#FFFFFF;
+    --tasks:#5B4FE8; --tasks-g1:#4C3FD6; --tasks-g2:#8E5BF0; --tasks-chip:#EDEAFD; --tasks-on:#3A2FA8;
+    --shop:#0E9F6E; --shop-g1:#0E9F6E; --shop-g2:#00B8A9; --shop-chip:#E0F5EE; --shop-on:#0B6E4F;
+    --red:#D32F2F; --amber:#9A6A00; --blue:#1A56DB;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',Roboto,Arial,sans-serif;}
+  body{background:#ECECF2; color:var(--ink); padding:24px;}
+  h1{font-size:22px; margin-bottom:4px;}
+  .meta{color:var(--sub); font-size:13px; margin-bottom:20px;}
+  h2.sec{font-size:17px; margin:28px 0 12px; padding-bottom:6px; border-bottom:2px solid #C9C9D6;}
+  .grid{display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start;}
+  .unit{width:312px;}
+  .phone{width:312px; height:648px; background:var(--surface); border:8px solid #23232E; border-radius:30px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.18);}
+  .status{height:20px; background:transparent; display:flex; justify-content:space-between; padding:3px 14px; font-size:9px; color:#fff; position:relative; z-index:2;}
+  .hdr{padding:2px 14px 12px; color:#fff; margin-top:-20px; padding-top:24px;}
+  .hdr.tasks{background:linear-gradient(120deg,var(--tasks-g1),var(--tasks-g2));}
+  .hdr.shop{background:linear-gradient(120deg,var(--shop-g1),var(--shop-g2));}
+  .hrow{display:flex; align-items:center; justify-content:space-between;}
+  .app{font-size:17px; font-weight:700;}
+  .subt{font-size:11px; opacity:.9; margin-top:2px;}
+  .modechip{background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.55); border-radius:14px; padding:4px 9px; font-size:10px; font-weight:600; display:flex; align-items:center; gap:4px;}
+  .body{flex:1; overflow:hidden; padding:10px 10px 0; display:flex; flex-direction:column; gap:8px;}
+  .card{background:var(--card); border-radius:12px; padding:9px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .rowline{display:flex; align-items:center; gap:8px;}
+  .grow{flex:1; min-width:0;}
+  .t1{font-size:12.5px; font-weight:600;}
+  .t2{font-size:10px; color:var(--sub);}
+  .t3{font-size:9.5px; color:var(--hint);}
+  .pill{display:inline-block; font-size:8.5px; font-weight:700; padding:2px 7px; border-radius:9px; letter-spacing:.2px;}
+  .pill.chain{background:var(--shop-chip); color:var(--shop-on); border:1px solid #9FD8C4;}
+  .pill.local{background:#EFEFF5; color:#55556A;}
+  .pill.geo{background:#E8F0FE; color:#1A56DB;}
+  .pill.nogeo{background:#F1F1F5; color:var(--hint);}
+  .pill.def{background:#FFF3D6; color:#9A6A00;}
+  .pill.qty{background:#EFEFF5; color:#44445A;}
+  .pill.best{background:#E7F6EC; color:#1FA463;}
+  .ghead{font-size:10.5px; font-weight:700; color:var(--shop-on); background:var(--shop-chip); padding:4px 9px; border-radius:9px;}
+  .ghead.tk{color:var(--tasks-on); background:var(--tasks-chip);}
+  .check{width:16px; height:16px; border:2px solid var(--hint); border-radius:5px; flex:none;}
+  .star{color:#E5A400; font-size:13px;}
+  .iconbtn{color:var(--sub); font-size:12px;}
+  .btn{display:flex; align-items:center; justify-content:center; gap:6px; background:var(--shop); color:#fff; font-size:11.5px; font-weight:600; padding:8px; border-radius:11px;}
+  .btn.outline{background:#fff; color:var(--shop); border:1.5px solid var(--shop);}
+  .fab{position:relative; align-self:flex-end; margin:2px 4px 8px 0; width:44px; height:44px; border-radius:15px; background:var(--shop); color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(14,159,110,.4);}
+  .fab.tk{background:var(--tasks); box-shadow:0 4px 10px rgba(91,79,232,.4);}
+  .nav{height:56px; background:#fff; border-top:1px solid #E4E4EC; display:flex;}
+  .nitem{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:8.5px; color:#9A9AAC; font-weight:600;}
+  .nitem .nico{font-size:15px;}
+  .nitem.on{color:var(--shop);}
+  .nitem.on .bg{background:rgba(14,159,110,.14); border-radius:12px; padding:1px 12px;}
+  .nitem.ontk{color:var(--tasks);}
+  .nitem.ontk .bg{background:rgba(91,79,232,.14); border-radius:12px; padding:1px 12px;}
+  .cap{font-size:11.5px; color:#3A3A4C; background:#fff; border-left:4px solid var(--shop); border-radius:8px; padding:8px 10px; margin-top:8px; line-height:1.45;}
+  .cap.tk{border-left-color:var(--tasks);}
+  .cap b{color:#111;}
+  .search{background:#fff; border:1px solid #DCDCE6; border-radius:11px; padding:7px 10px; font-size:11px; color:var(--hint); display:flex; gap:6px; align-items:center;}
+  .chips{display:flex; gap:6px; flex-wrap:wrap;}
+  .fchip{font-size:9.5px; padding:4px 9px; border-radius:12px; background:#fff; border:1px solid #D8D8E2; color:#55556A;}
+  .fchip.on{background:var(--shop); border-color:var(--shop); color:#fff; font-weight:600;}
+  .field{border:1.4px solid #C9C9D6; border-radius:10px; padding:7px 9px; font-size:11px; color:var(--ink); background:#fff;}
+  .field .lbl{display:block; font-size:8.5px; color:var(--sub); margin-bottom:1px;}
+  .seg{display:flex; border:1.5px solid var(--shop); border-radius:11px; overflow:hidden;}
+  .seg div{flex:1; text-align:center; font-size:10.5px; font-weight:600; padding:6px; color:var(--shop);}
+  .seg .on{background:var(--shop); color:#fff;}
+  .switch{width:30px; height:17px; border-radius:9px; background:var(--shop); position:relative; flex:none;}
+  .switch::after{content:''; position:absolute; right:2px; top:2px; width:13px; height:13px; border-radius:50%; background:#fff;}
+  .switch.off{background:#C9C9D6;} .switch.off::after{left:2px; right:auto;}
+  .slider{height:4px; background:#DADAE4; border-radius:2px; position:relative; margin:10px 2px 4px;}
+  .slider .fill{position:absolute; left:0; top:0; height:4px; width:38%; background:var(--shop); border-radius:2px;}
+  .slider .knob{position:absolute; left:38%; top:-5px; width:14px; height:14px; background:var(--shop); border-radius:50%;}
+  .ticks{display:flex; justify-content:space-between; font-size:8px; color:var(--hint); margin-top:2px;}
+  .sheet{background:#fff; border-radius:18px 18px 0 0; margin-top:auto; padding:12px 12px 6px; box-shadow:0 -4px 16px rgba(0,0,0,.15); display:flex; flex-direction:column; gap:8px;}
+  .handle{width:34px; height:4px; background:#D5D5DF; border-radius:2px; align-self:center; margin-bottom:2px;}
+  .dim{flex:1; background:rgba(20,20,30,.35);}
+  .spacer-note{font-size:8px; color:var(--hint); text-align:center; padding:5px 0 2px; border-top:1px dashed #E0E0EA;}
+  .setrow{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid #F0F0F6;}
+  .setrow:last-child{border-bottom:none;}
+  .sethead{font-size:10px; font-weight:700; color:var(--shop-on); margin:4px 2px 0; letter-spacing:.3px;}
+  /* ER diagram */
+  .er{background:#fff; border-radius:14px; padding:18px; overflow-x:auto;}
+  .erwrap{display:flex; gap:34px; align-items:flex-start; min-width:900px; position:relative;}
+  .ent{width:172px; border:2px solid #1B1B26; border-radius:10px; overflow:hidden; flex:none;}
+  .ent .eh{padding:6px 10px; font-weight:700; font-size:12.5px; color:#111;}
+  .ent .eb{padding:7px 10px; font-size:10.5px; line-height:1.65; background:#fff; border-top:2px solid #1B1B26; color:#222;}
+  .ent .eb i{color:#666;}
+  .rel{font-size:10.5px; font-weight:700; color:#333; align-self:center; text-align:center; line-height:1.4;}
+  .arrow{font-size:16px; color:#333;}
+  .lane{display:flex; flex-direction:column; gap:22px;}
+  .keynote{font-size:11px; color:#444; margin-top:12px; line-height:1.6;}
+  .kbd{background:#EFEFF5; border:1px solid #D5D5DF; border-radius:4px; padding:0 5px; font-size:10px;}
+
+  /* N32 additions */
+  .sysbar{height:26px; background:#0F0F14; display:flex; justify-content:space-around; align-items:center; color:#fff; font-size:12px; letter-spacing:6px; flex:none;}
+  .sysbar.gesture{height:12px; letter-spacing:0;} .sysbar.gesture::after{content:''; width:90px; height:3px; background:#fff; border-radius:2px;}
+  .clear{background:repeating-linear-gradient(135deg,#E7F6EC,#E7F6EC 6px,#F6FBF7 6px,#F6FBF7 12px); border:1px dashed #1FA463; color:#0B6E4F; font-size:8.5px; text-align:center; padding:3px 0; border-radius:6px;}
+  .acc{background:#fff; border-radius:12px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .acc .ah{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#0B6E4F;}
+  .acc .ah.tk{color:#3A2FA8;}
+  .acc .ah .car{margin-left:auto; color:#9A9AAC; font-weight:400;}
+  .arow{display:flex; align-items:center; gap:8px; padding:7px 2px; border-top:1px solid #F0F0F6; font-size:11px;}
+  .arow .l{flex:1;} .arow .l .s{font-size:9.5px; color:#6B6B80;}
+  .abtn{display:flex; gap:8px;} .abtn div{flex:1; text-align:center; font-size:12px; font-weight:700; padding:11px 0; border-radius:12px;}
+  .abtn .cancel{border:1.5px solid #C9C9D6; color:#55556A; background:#fff;}
+  .abtn .save{background:var(--shop); color:#fff;} .abtn .save.tk{background:var(--tasks);}
+  .abtn .del{border:1.5px solid #F2B8B5; color:#D32F2F; background:#fff;}
+  .linkrow{background:#fff; border:1.5px solid #9FD8C4; border-radius:12px; padding:9px 10px; display:flex; align-items:center; font-size:11.5px; font-weight:600;}
+
+  .hdr.learn{background:linear-gradient(120deg,#F2711C,#E8467C);} .hdr.calls{background:linear-gradient(120deg,#1565C0,#26C6DA);}
+  .abtn .save.learn{background:#EE5A24;} .abtn .save.calls{background:#1E88E5;}
+  .nitem.onln{color:#EE5A24;} .nitem.onln .bg{background:rgba(238,90,36,.14); border-radius:12px; padding:1px 12px;}
+  .nitem.oncl{color:#1E88E5;} .nitem.oncl .bg{background:rgba(30,136,229,.14); border-radius:12px; padding:1px 12px;}
+  .segchip{display:inline-block; font-size:9px; padding:3px 8px; border-radius:10px; border:1px solid #D8D8E2; color:#55556A; margin-right:4px;}
+</style></head><body>
+<h1>Remindly 2.01 — Option D (25%) on every popup, everywhere</h1>
+<div class="meta">Design Round 3 for N32 · 16-Aug-2026 · one EditorSheet standard applied to all eight popup families · to scale for ~800 dp phone, 3-button nav · Settings frames from Round 1 (Mode accordion on both pages, Shop Settings deck) are unchanged and still apply.</div>
+<div class="cap" style="max-width:900px"><b>The standard on every frame:</b> drag handle · accent title · content · action row (Delete when editing · Cancel outlined · Save/Add filled — equal width, 50 dp) · <b>SheetBottomSpace = max(25% of screen, nav-bar + 24 dp)</b>. Tall sheets scroll inside; the clear space is always the last thing on screen.</div>
+<h2 class="sec">A — Task mode</h2><div class="grid">
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Tasks</div><div class="subt">3 due today</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#5B4FE8">Edit task</div><div class="field" style=""><span class="lbl">Task</span>Pay electricity bill</div><div class="rowline"><div class="field" style="flex:1"><span class="lbl">Due</span>Fri 21 Aug</div><div class="field" style="width:74px"><span class="lbl">Time</span>10:00</div></div><div><span class="segchip">Repeat: none</span><span class="segchip">Priority: High</span><span class="segchip">Group: Bills</span></div><div class="field" style=""><span class="lbl">Notes</span>Add note…</div>
+<div class="abtn"><div class="del">Delete</div><div class="cancel">Cancel</div><div class="save tk">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap tk"><b>1 · Tasks — item editor (Task palette)</b><br>Existing action row already standard (Delete · Cancel · Save, 50 dp). NEW: the D clearance below it — 200 dp of sheet before the system buttons.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr learn"><div class="hrow"><div><div class="app">Learn</div><div class="subt">1 due today</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#EE5A24">Edit learn item</div><div class="field" style=""><span class="lbl">Learn</span>Chapter 4 — Attention</div><div class="rowline"><div class="field" style="flex:1"><span class="lbl">Due</span>Sat 22 Aug</div><div class="field" style="width:74px"><span class="lbl">Time</span>19:30</div></div><div><span class="segchip">Repeat: weekly</span><span class="segchip">Group: DL</span></div><div class="field" style=""><span class="lbl">Notes</span>Add note…</div>
+<div class="abtn"><div class="del">Delete</div><div class="cancel">Cancel</div><div class="save learn">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap tk"><b>2 · Learn — item editor (Learn palette)</b><br>Same chrome and clearance; only the accent changes with the tab.</div></div>
+</div><h2 class="sec">B — Shop mode</h2><div class="grid"><div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr shop"><div class="hrow"><div><div class="app">Buy</div><div class="subt">5 active · 12 done</div></div><div class="modechip">✔ Task mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Edit item</div><div class="field" style=""><span class="lbl">Item</span>Basmati Rice</div><div class="rowline"><div class="field" style="flex:1"><span class="lbl">Qty</span>5</div><div class="field" style="flex:1"><span class="lbl">Unit</span>kg</div></div><div class="field" style=""><span class="lbl">Shop</span>D-Mart – Serampore</div><div class="t2" style="color:#1FA463">💡 Cheapest here: ₹52/kg</div>
+<div class="abtn"><div class="del">Delete</div><div class="cancel">Cancel</div><div class="save ">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap "><b>3 · Shop mode → Buy — item editor</b><br>Product-linked buy item; identical chrome.</div></div>
+</div><h2 class="sec">A′ — Calls (Task mode)</h2><div class="grid"><div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr calls"><div class="hrow"><div><div class="app">Calls</div><div class="subt">2 pending</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#1E88E5">Edit call reminder</div><div class="t2">Manual reminder · +91 98••• ••210</div><div class="field" style=""><span class="lbl">Note</span>Call back about invoice</div><div><span class="segchip">Label: Work</span><span class="segchip">Delete after: 7 d</span></div><div class="rowline"><div class="field" style="flex:1"><span class="lbl">Remind</span>Tomorrow</div><div class="field" style="width:74px"><span class="lbl">Time</span>09:30</div></div>
+<div class="abtn"><div class="cancel">Cancel</div><div class="save calls">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap tk"><b>4 · Calls — edit sheet (Calls palette)</b><br>The three Calls sheets (note / save-to-contacts / edit) take the same clearance; their action rows are already 50 dp.</div></div>
+</div><h2 class="sec">B′ — Shop mode (continued)</h2><div class="grid"><div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr shop"><div class="hrow"><div><div class="app">Shops</div><div class="subt">2 cities · 5 shops</div></div><div class="modechip">✔ Task mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Add shop</div><div class="seg"><div class="on">Local shop</div><div>Chain branch</div></div><div class="field" style=""><span class="lbl">City</span>Serampore</div><div class="field" style=""><span class="lbl">Shop name</span>More Supermarket</div><div class="btn outline">📍 Pick on map</div><div class="rowline"><div class="grow t1">Default shop</div><div class="switch off"></div></div>
+<div class="abtn"><div class="cancel">Cancel</div><div class="save ">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap "><b>5 · Shop mode → Shops — shop editor</b><br>New in 2.01: big Cancel/Save row (was small text buttons) + D clearance.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr shop"><div class="hrow"><div><div class="app">Products</div><div class="subt">4 products</div></div><div class="modechip">✔ Task mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Edit product</div><div class="field" style=""><span class="lbl">Product name</span>Basmati Rice</div><div class="rowline"><div class="field" style="flex:1"><span class="lbl">Category</span>Grocery</div><div class="field" style="width:70px"><span class="lbl">Unit</span>kg</div></div><div class="chips"><span class="fchip on">kg</span><span class="fchip">g</span><span class="fchip">L</span><span class="fchip">pcs</span></div><div class="t2" style="font-weight:600">Available at (price optional)</div><div class="rowline"><div class="check" style="background:#0E9F6E;border-color:#0E9F6E"></div><div class="grow t2">D-Mart – Serampore</div><div class="field" style="width:78px">₹52/kg</div></div>
+<div class="abtn"><div class="del">Delete</div><div class="cancel">Cancel</div><div class="save ">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap "><b>6 · Shop mode → Products — product editor</b><br>Delete slot appears when editing (list-row 🗑 stays as the fast path).</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr shop"><div class="hrow"><div><div class="app">Shops</div><div class="subt">2 cities · 5 shops</div></div><div class="modechip">✔ Task mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Add city</div><div class="field" style=""><span class="lbl">City name</span>Serampore</div>
+<div class="abtn"><div class="cancel">Cancel</div><div class="save ">Save</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap "><b>7 · Shop mode → Shops — City / Chain editor (dialog → sheet)</b><br>One-field editors join the same standard so every edit popup looks alike.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr shop"><div class="hrow"><div><div class="app">Buy</div><div class="subt">5 active · 12 done</div></div><div class="modechip">✔ Task mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
+<div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Share list</div><div class="t2">Share 5 buy items</div><div class="rowline"><div class="segchip">As text</div><div class="segchip">As Remindly list</div></div><div class="field">To: WhatsApp · Gmail · Copy…</div>
+<div class="abtn"><div class="cancel">Cancel</div><div class="save ">Share</div></div><div class="clear" style="height:162px;display:flex;align-items:center;justify-content:center;flex-direction:column"><div><b>Option D</b> — 25% of screen ≈ 200 dp clear</div><div style="font-size:8px">SheetBottomSpace · plain sheet background in the app</div></div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap "><b>8 · Share sheet (Buy / Tasks) — clearance + row sizing only</b><br>Not an editor: keeps its approved layout and own actions; gains the 50 dp row sizing and the same D clearance (the v1.87 'untappable Share as text' class).</div></div>
+</div>
+<h2 class="sec">C — Coverage list (what "everywhere" means in code)</h2>
+<div class="er"><table style="border-collapse:collapse;font-size:12px;width:100%">
+<tr style="background:#EFEFF5"><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">SrNo.</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">Popup</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">File</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">2.00 today</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">2.01</th></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">1</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Item editor — Tasks / Learn / Shop(Buy)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">ListScreens.kt (2 sheets)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">50 dp row ✓ · inset spacer</td><td style="padding:6px 8px;border:1px solid #D5D5DF">EditorSheet + D</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">2</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Calls note / save-to-contacts / edit</td><td style="padding:6px 8px;border:1px solid #D5D5DF">CallsScreen.kt (3)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">50 dp row ✓ · inset spacer</td><td style="padding:6px 8px;border:1px solid #D5D5DF">EditorSheet + D</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">3</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Shop editor · Product editor</td><td style="padding:6px 8px;border:1px solid #D5D5DF">ShopMode.kt (2)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">small text buttons · inset spacer</td><td style="padding:6px 8px;border:1px solid #D5D5DF">EditorSheet + D + Delete slot</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">4</td><td style="padding:6px 8px;border:1px solid #D5D5DF">City editor · Chain editor</td><td style="padding:6px 8px;border:1px solid #D5D5DF">ShopMode.kt (dialogs)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">AlertDialog</td><td style="padding:6px 8px;border:1px solid #D5D5DF">EditorSheet + D</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">5</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Share sheets</td><td style="padding:6px 8px;border:1px solid #D5D5DF">ShareUi.kt (2)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">own layout · inset spacer</td><td style="padding:6px 8px;border:1px solid #D5D5DF">own layout · 50 dp rows · D</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">6</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Choosers &amp; confirms (pick city/chain, delete confirms, checkout calculator)</td><td style="padding:6px 8px;border:1px solid #D5D5DF">various</td><td style="padding:6px 8px;border:1px solid #D5D5DF">centered dialogs</td><td style="padding:6px 8px;border:1px solid #D5D5DF">unchanged (not bottom-anchored, never touch the nav bar)</td></tr>
+</table></div></body></html>

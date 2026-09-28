@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.22 item 10: same exclusion for Android 12+ cloud backup and device-to-device transfer. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="remindly_pin.xml" />
+        <exclude domain="sharedpref" path="remindly_pin.xml.bak" />
+        <exclude domain="sharedpref" path="remindly_keys.xml" />
+        <exclude domain="sharedpref" path="remindly_keys.xml.bak" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="remindly_pin.xml" />
+        <exclude domain="sharedpref" path="remindly_pin.xml.bak" />
+        <exclude domain="sharedpref" path="remindly_keys.xml" />
+        <exclude domain="sharedpref" path="remindly_keys.xml.bak" />
+    </device-transfer>
+</data-extraction-rules>

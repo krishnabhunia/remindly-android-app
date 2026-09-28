@@ -1,0 +1,177 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remindly 2.02 — N33 Round 3 · dropdown radius, no key reveal, Add new / Remove</title><style>
+  :root{
+    --ink:#1B1B26; --sub:#6B6B80; --hint:#9A9AAC; --faint:#B9B9C6;
+    --surface:#F4F4F9; --card:#FFFFFF;
+    --tasks:#5B4FE8; --tasks-g1:#4C3FD6; --tasks-g2:#8E5BF0; --tasks-chip:#EDEAFD; --tasks-on:#3A2FA8;
+    --shop:#0E9F6E; --shop-g1:#0E9F6E; --shop-g2:#00B8A9; --shop-chip:#E0F5EE; --shop-on:#0B6E4F;
+    --red:#D32F2F; --amber:#9A6A00; --blue:#1A56DB;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',Roboto,Arial,sans-serif;}
+  body{background:#ECECF2; color:var(--ink); padding:24px;}
+  h1{font-size:22px; margin-bottom:4px;}
+  .meta{color:var(--sub); font-size:13px; margin-bottom:20px;}
+  h2.sec{font-size:17px; margin:28px 0 12px; padding-bottom:6px; border-bottom:2px solid #C9C9D6;}
+  .grid{display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start;}
+  .unit{width:312px;}
+  .phone{width:312px; height:648px; background:var(--surface); border:8px solid #23232E; border-radius:30px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.18);}
+  .status{height:20px; background:transparent; display:flex; justify-content:space-between; padding:3px 14px; font-size:9px; color:#fff; position:relative; z-index:2;}
+  .hdr{padding:2px 14px 12px; color:#fff; margin-top:-20px; padding-top:24px;}
+  .hdr.tasks{background:linear-gradient(120deg,var(--tasks-g1),var(--tasks-g2));}
+  .hdr.shop{background:linear-gradient(120deg,var(--shop-g1),var(--shop-g2));}
+  .hrow{display:flex; align-items:center; justify-content:space-between;}
+  .app{font-size:17px; font-weight:700;}
+  .subt{font-size:11px; opacity:.9; margin-top:2px;}
+  .modechip{background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.55); border-radius:14px; padding:4px 9px; font-size:10px; font-weight:600; display:flex; align-items:center; gap:4px;}
+  .body{flex:1; overflow:hidden; padding:10px 10px 0; display:flex; flex-direction:column; gap:8px;}
+  .card{background:var(--card); border-radius:12px; padding:9px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .rowline{display:flex; align-items:center; gap:8px;}
+  .grow{flex:1; min-width:0;}
+  .t1{font-size:12.5px; font-weight:600;}
+  .t2{font-size:10px; color:var(--sub);}
+  .t3{font-size:9.5px; color:var(--hint);}
+  .pill{display:inline-block; font-size:8.5px; font-weight:700; padding:2px 7px; border-radius:9px; letter-spacing:.2px;}
+  .pill.chain{background:var(--shop-chip); color:var(--shop-on); border:1px solid #9FD8C4;}
+  .pill.local{background:#EFEFF5; color:#55556A;}
+  .pill.geo{background:#E8F0FE; color:#1A56DB;}
+  .pill.nogeo{background:#F1F1F5; color:var(--hint);}
+  .pill.def{background:#FFF3D6; color:#9A6A00;}
+  .pill.qty{background:#EFEFF5; color:#44445A;}
+  .pill.best{background:#E7F6EC; color:#1FA463;}
+  .ghead{font-size:10.5px; font-weight:700; color:var(--shop-on); background:var(--shop-chip); padding:4px 9px; border-radius:9px;}
+  .ghead.tk{color:var(--tasks-on); background:var(--tasks-chip);}
+  .check{width:16px; height:16px; border:2px solid var(--hint); border-radius:5px; flex:none;}
+  .star{color:#E5A400; font-size:13px;}
+  .iconbtn{color:var(--sub); font-size:12px;}
+  .btn{display:flex; align-items:center; justify-content:center; gap:6px; background:var(--shop); color:#fff; font-size:11.5px; font-weight:600; padding:8px; border-radius:11px;}
+  .btn.outline{background:#fff; color:var(--shop); border:1.5px solid var(--shop);}
+  .fab{position:relative; align-self:flex-end; margin:2px 4px 8px 0; width:44px; height:44px; border-radius:15px; background:var(--shop); color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(14,159,110,.4);}
+  .fab.tk{background:var(--tasks); box-shadow:0 4px 10px rgba(91,79,232,.4);}
+  .nav{height:56px; background:#fff; border-top:1px solid #E4E4EC; display:flex;}
+  .nitem{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:8.5px; color:#9A9AAC; font-weight:600;}
+  .nitem .nico{font-size:15px;}
+  .nitem.on{color:var(--shop);}
+  .nitem.on .bg{background:rgba(14,159,110,.14); border-radius:12px; padding:1px 12px;}
+  .nitem.ontk{color:var(--tasks);}
+  .nitem.ontk .bg{background:rgba(91,79,232,.14); border-radius:12px; padding:1px 12px;}
+  .cap{font-size:11.5px; color:#3A3A4C; background:#fff; border-left:4px solid var(--shop); border-radius:8px; padding:8px 10px; margin-top:8px; line-height:1.45;}
+  .cap.tk{border-left-color:var(--tasks);}
+  .cap b{color:#111;}
+  .search{background:#fff; border:1px solid #DCDCE6; border-radius:11px; padding:7px 10px; font-size:11px; color:var(--hint); display:flex; gap:6px; align-items:center;}
+  .chips{display:flex; gap:6px; flex-wrap:wrap;}
+  .fchip{font-size:9.5px; padding:4px 9px; border-radius:12px; background:#fff; border:1px solid #D8D8E2; color:#55556A;}
+  .fchip.on{background:var(--shop); border-color:var(--shop); color:#fff; font-weight:600;}
+  .field{border:1.4px solid #C9C9D6; border-radius:10px; padding:7px 9px; font-size:11px; color:var(--ink); background:#fff;}
+  .field .lbl{display:block; font-size:8.5px; color:var(--sub); margin-bottom:1px;}
+  .seg{display:flex; border:1.5px solid var(--shop); border-radius:11px; overflow:hidden;}
+  .seg div{flex:1; text-align:center; font-size:10.5px; font-weight:600; padding:6px; color:var(--shop);}
+  .seg .on{background:var(--shop); color:#fff;}
+  .switch{width:30px; height:17px; border-radius:9px; background:var(--shop); position:relative; flex:none;}
+  .switch::after{content:''; position:absolute; right:2px; top:2px; width:13px; height:13px; border-radius:50%; background:#fff;}
+  .switch.off{background:#C9C9D6;} .switch.off::after{left:2px; right:auto;}
+  .slider{height:4px; background:#DADAE4; border-radius:2px; position:relative; margin:10px 2px 4px;}
+  .slider .fill{position:absolute; left:0; top:0; height:4px; width:38%; background:var(--shop); border-radius:2px;}
+  .slider .knob{position:absolute; left:38%; top:-5px; width:14px; height:14px; background:var(--shop); border-radius:50%;}
+  .ticks{display:flex; justify-content:space-between; font-size:8px; color:var(--hint); margin-top:2px;}
+  .sheet{background:#fff; border-radius:18px 18px 0 0; margin-top:auto; padding:12px 12px 6px; box-shadow:0 -4px 16px rgba(0,0,0,.15); display:flex; flex-direction:column; gap:8px;}
+  .handle{width:34px; height:4px; background:#D5D5DF; border-radius:2px; align-self:center; margin-bottom:2px;}
+  .dim{flex:1; background:rgba(20,20,30,.35);}
+  .spacer-note{font-size:8px; color:var(--hint); text-align:center; padding:5px 0 2px; border-top:1px dashed #E0E0EA;}
+  .setrow{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid #F0F0F6;}
+  .setrow:last-child{border-bottom:none;}
+  .sethead{font-size:10px; font-weight:700; color:var(--shop-on); margin:4px 2px 0; letter-spacing:.3px;}
+  /* ER diagram */
+  .er{background:#fff; border-radius:14px; padding:18px; overflow-x:auto;}
+  .erwrap{display:flex; gap:34px; align-items:flex-start; min-width:900px; position:relative;}
+  .ent{width:172px; border:2px solid #1B1B26; border-radius:10px; overflow:hidden; flex:none;}
+  .ent .eh{padding:6px 10px; font-weight:700; font-size:12.5px; color:#111;}
+  .ent .eb{padding:7px 10px; font-size:10.5px; line-height:1.65; background:#fff; border-top:2px solid #1B1B26; color:#222;}
+  .ent .eb i{color:#666;}
+  .rel{font-size:10.5px; font-weight:700; color:#333; align-self:center; text-align:center; line-height:1.4;}
+  .arrow{font-size:16px; color:#333;}
+  .lane{display:flex; flex-direction:column; gap:22px;}
+  .keynote{font-size:11px; color:#444; margin-top:12px; line-height:1.6;}
+  .kbd{background:#EFEFF5; border:1px solid #D5D5DF; border-radius:4px; padding:0 5px; font-size:10px;}
+
+  /* N32 additions */
+  .sysbar{height:26px; background:#0F0F14; display:flex; justify-content:space-around; align-items:center; color:#fff; font-size:12px; letter-spacing:6px; flex:none;}
+  .sysbar.gesture{height:12px; letter-spacing:0;} .sysbar.gesture::after{content:''; width:90px; height:3px; background:#fff; border-radius:2px;}
+  .clear{background:repeating-linear-gradient(135deg,#E7F6EC,#E7F6EC 6px,#F6FBF7 6px,#F6FBF7 12px); border:1px dashed #1FA463; color:#0B6E4F; font-size:8.5px; text-align:center; padding:3px 0; border-radius:6px;}
+  .acc{background:#fff; border-radius:12px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .acc .ah{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#0B6E4F;}
+  .acc .ah.tk{color:#3A2FA8;}
+  .acc .ah .car{margin-left:auto; color:#9A9AAC; font-weight:400;}
+  .arow{display:flex; align-items:center; gap:8px; padding:7px 2px; border-top:1px solid #F0F0F6; font-size:11px;}
+  .arow .l{flex:1;} .arow .l .s{font-size:9.5px; color:#6B6B80;}
+  .abtn{display:flex; gap:8px;} .abtn div{flex:1; text-align:center; font-size:12px; font-weight:700; padding:11px 0; border-radius:12px;}
+  .abtn .cancel{border:1.5px solid #C9C9D6; color:#55556A; background:#fff;}
+  .abtn .save{background:var(--shop); color:#fff;} .abtn .save.tk{background:var(--tasks);}
+  .abtn .del{border:1.5px solid #F2B8B5; color:#D32F2F; background:#fff;}
+  .linkrow{background:#fff; border:1.5px solid #9FD8C4; border-radius:12px; padding:9px 10px; display:flex; align-items:center; font-size:11.5px; font-weight:600;}
+
+  .hdr.learn{background:linear-gradient(120deg,#F2711C,#E8467C);} .hdr.calls{background:linear-gradient(120deg,#1565C0,#26C6DA);}
+  .abtn .save.learn{background:#EE5A24;} .abtn .save.calls{background:#1E88E5;}
+  .nitem.onln{color:#EE5A24;} .nitem.onln .bg{background:rgba(238,90,36,.14); border-radius:12px; padding:1px 12px;}
+  .nitem.oncl{color:#1E88E5;} .nitem.oncl .bg{background:rgba(30,136,229,.14); border-radius:12px; padding:1px 12px;}
+  .segchip{display:inline-block; font-size:9px; padding:3px 8px; border-radius:10px; border:1px solid #D8D8E2; color:#55556A; margin-right:4px;}
+
+  .map{position:relative; height:330px; background:#EAF3E6; overflow:hidden; border-radius:10px; margin:6px 0;}
+  .map.osm{background:#F2EFE9;}
+  .rd{position:absolute; background:#fff; border:1px solid #D9D9D9;} .map.osm .rd{background:#fff; border-color:#E5C97B;}
+  .rd.h{height:10px; left:0; right:0;} .rd.v{width:10px; top:0; bottom:0;}
+  .lbl2{position:absolute; font-size:8px; color:#5C6B5C; background:rgba(255,255,255,.7); padding:0 3px; border-radius:3px;}
+  .pin{position:absolute; left:50%; top:46%; transform:translate(-50%,-100%); font-size:22px;}
+  .ring{position:absolute; left:50%; top:46%; width:120px; height:120px; border:2px solid rgba(14,159,110,.8); background:rgba(14,159,110,.15); border-radius:50%; transform:translate(-50%,-50%);}
+  .attrib{position:absolute; right:6px; bottom:4px; font-size:7.5px; color:#555; background:rgba(255,255,255,.75); padding:1px 4px; border-radius:3px;}
+  .badge{position:absolute; left:8px; top:8px; font-size:9px; font-weight:700; color:#fff; padding:3px 8px; border-radius:10px; background:#1A73E8;}
+  .badge.osm{background:#7B5E2B;}
+  .prog{height:8px; background:#EDEDF3; border-radius:4px; overflow:hidden; margin:4px 0;} .prog>div{height:100%; background:#0E9F6E;} .prog.full>div{background:#D32F2F;}
+  .chip2{display:inline-block; font-size:10px; font-weight:700; padding:5px 12px; border-radius:14px; border:1.5px solid #C9C9D6; color:#55556A; margin-right:6px;}
+  .chip2.on{background:#5B4FE8; border-color:#5B4FE8; color:#fff;} .chip2.dis{opacity:.45; text-decoration:line-through;}
+  .keyf{border:1px solid #C9C9D6; border-radius:10px; padding:7px 9px; font-size:10.5px; letter-spacing:2px; color:#333; background:#fff;}
+  .note{font-size:9px; color:#6B6B80; margin-top:4px;}
+  .toast{position:absolute; left:14px; right:14px; bottom:60px; background:#1F1F2E; color:#fff; font-size:10.5px; padding:9px 12px; border-radius:10px;}
+  .flow{display:flex; flex-wrap:wrap; gap:8px; align-items:center;} .fb{background:#fff; border:1.5px solid #B9B9CC; border-radius:10px; padding:8px 10px; font-size:11.5px; min-width:120px;}
+  .fb.y{border-color:#0E9F6E; background:#E7F6EC;} .fb.n{border-color:#D32F2F; background:#FDECEA;} .arr{font-size:16px; color:#666;}
+
+  .lvl2{border-left:3px solid #C9C9D6; margin:6px 0 4px 6px; padding:6px 0 4px 10px;}
+  .krow{display:flex; align-items:center; gap:8px; padding:6px 2px; border-top:1px solid #F0F0F6; font-size:11px;}
+  .krow .st{font-size:9px; font-weight:700; padding:2px 7px; border-radius:9px;} .st.ok{background:#E7F6EC;color:#0B6E4F;} .st.no{background:#FFF4E5;color:#B7791F;} .st.ro{background:#EEF0F4;color:#55556A;}
+  .dot{position:absolute; left:50%; top:46%; width:14px; height:14px; margin:-7px 0 0 -7px; background:#1A73E8; border:3px solid #fff; border-radius:50%; box-shadow:0 0 0 2px #1A73E8;}
+  .acc2{position:absolute; left:50%; top:46%; width:70px; height:70px; margin:-35px 0 0 -35px; border-radius:50%; background:rgba(26,115,232,.18); border:1px solid rgba(26,115,232,.5);}
+  .scale{display:flex; gap:3px; flex-wrap:wrap; margin:4px 0;} .scale span{font-size:8.5px; padding:3px 5px; border-radius:8px; border:1px solid #C9C9D6; color:#55556A;} .scale span.on{background:#0E9F6E; border-color:#0E9F6E; color:#fff; font-weight:700;}
+  .mybtn{position:absolute; right:8px; bottom:26px; background:#fff; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 1px 4px rgba(0,0,0,.25);}
+
+  .dd{border:1px solid #C9C9D6; border-radius:10px; padding:8px 10px; font-size:11.5px; display:flex; align-items:center; background:#fff;} .dd .car{margin-left:auto; color:#9A9AAC;}
+  .ddl{border:1px solid #C9C9D6; border-radius:10px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,.12); margin-top:4px; overflow:hidden;}
+  .ddl div{padding:6px 12px; font-size:11px; border-top:1px solid #F0F0F6;} .ddl div.on{background:#E7F6EC; color:#0B6E4F; font-weight:700;}
+  .mask{border:1px solid #C9C9D6; border-radius:10px; padding:8px 10px; font-size:12px; letter-spacing:3px; color:#333; background:#fff;}
+</style></head><body>
+<h1>Remindly 2.02 — N33 Design Round 3</h1>
+<div class="meta">17-Aug-2026 · corrections C4–C7 applied: default radius = dropdown; NO key reveal in any manner; level 2 shows only “Add new” or “Remove” per status; Remove double-confirmed by typing “Remove”. Rounds 1–2 otherwise unchanged (Google default, OSM fallback, limit + hard lock, GPS-centred picker, 13-stop scale). HTML frames only — nothing built.</div>
+<h2 class="sec">A — Settings</h2><div class="grid">
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body"><div class="acc"><div class="ah tk"><span>⇄ Mode</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🗺 Maps &amp; Location</span><span class="car">▾</span></div><div class="t2" style="font-weight:700;margin-top:6px">Provider</div><div style="margin:4px 0"><span class="chip2 on">Google</span><span class="chip2">OSM</span></div><div class="t2" style="margin-top:6px"><b>Google · Geocoding this month:</b> 3,120 / 56,000</div><div class="prog"><div style="width:6%"></div></div><div class="arow"><div class="l">India billing (7× free tier)<div class="s">Free cap 70,000 / month · off = 10,000</div></div><div class="switch"></div></div><div class="t2" style="font-weight:700;margin-top:6px">Monthly limit for Google geocoding</div><div class="t2">56,000 (80% of the free cap)</div><div class="slider" style="margin:6px 0"><div class="knob" style="left:80%"></div></div><div class="t2" style="font-weight:700;margin-top:8px">Default radius for new shops</div><div class="dd">150 m<span class="car">▾</span></div><div class="t2" style="margin-top:8px"><b>Now using</b> · Map: <span style="color:#1A73E8;font-weight:700">Google</span> · Address lookup: <span style="color:#1A73E8;font-weight:700">Google</span> → OSM fallback</div></div><div class="acc"><div class="ah tk"><span>🔑 API keys</span><span class="car">▸</span></div></div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>1 · Maps &amp; Location — “Default radius for new shops” is a DROPDOWN (C4)</b><br>Closed state shows the current value; tap opens the 13-stop list (frame 2).</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body"><div class="acc"><div class="ah tk"><span>⇄ Mode</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🗺 Maps &amp; Location</span><span class="car">▾</span></div><div class="t2" style="font-weight:700;margin-top:6px">Provider</div><div style="margin:4px 0"><span class="chip2 on">Google</span><span class="chip2">OSM</span></div><div class="t2" style="margin-top:6px"><b>Google · Geocoding this month:</b> 3,120 / 56,000</div><div class="prog"><div style="width:6%"></div></div><div class="arow"><div class="l">India billing (7× free tier)<div class="s">Free cap 70,000 / month · off = 10,000</div></div><div class="switch"></div></div><div class="t2" style="font-weight:700;margin-top:6px">Monthly limit for Google geocoding</div><div class="t2">56,000 (80% of the free cap)</div><div class="slider" style="margin:6px 0"><div class="knob" style="left:80%"></div></div><div class="t2" style="font-weight:700;margin-top:8px">Default radius for new shops</div><div class="dd">150 m<span class="car">▾</span></div><div class="ddl"><div class="">50 m</div><div class="">100 m</div><div class="on">150 m</div><div class="">200 m</div><div class="">250 m</div><div class="">300 m</div><div class="">400 m</div><div class="">500 m</div><div class="">750 m</div><div class="">1000 m</div><div class="">1.5 km</div><div class="">2 km</div><div class="">3 km</div></div><div class="t2" style="margin-top:8px"><b>Now using</b> · Map: <span style="color:#1A73E8;font-weight:700">Google</span> · Address lookup: <span style="color:#1A73E8;font-weight:700">Google</span> → OSM fallback</div></div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>2 · The dropdown open — 50 m … 3 km, current value highlighted</b><br>Only these 13 values exist; nothing in between.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body"><div class="acc"><div class="ah tk"><span>⇄ Mode</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🗺 Maps &amp; Location</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🔑 API keys</span><span class="car">▾</span></div><div class="krow"><div style="flex:1"><b>Google Geocoding API key</b><div class="note">Address lookups · stored on this phone only · never shown</div></div><span class="st ok">SET</span><span style="color:#9A9AAC">▸</span></div><div class="krow"><div style="flex:1"><b>Google Maps SDK key</b><div class="note">Map picker · ships inside the app, Android-restricted</div></div><span class="st ro">IN APP</span><span style="color:#9A9AAC">▸</span></div><div class="krow"><div style="flex:1"><b>Firebase (google-services)</b><div class="note">Sync · ships inside the app</div></div><span class="st ro">IN APP</span><span style="color:#9A9AAC">▸</span></div><div class="note" style="margin-top:6px">Keys are never revealed — not on screen, not in logs, not in backups/exports.</div></div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>3 · API keys — level 1: status only, NO characters of any key (C5)</b><br>SET / NOT SET / IN APP. No suffix, no partial value, no eye icon anywhere.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body"><div class="acc"><div class="ah tk"><span>⇄ Mode</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🗺 Maps &amp; Location</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🔑 API keys</span><span class="car">▾</span></div><div class="krow"><div style="flex:1"><b>Google Geocoding API key</b><div class="note">Address lookups · stored on this phone only · never shown</div></div><span class="st ok">SET</span><span style="color:#9A9AAC">▾</span></div><div class="lvl2"><div class="t2" style="font-weight:700">Level 2</div><div class="mask">••••••••••••••••••••••••••••</div><div class="note">Key is set. It cannot be viewed. To change it, remove it and add a new one.</div><div class="btn outline" style="text-align:center;color:#D32F2F;border-color:#D32F2F;margin-top:6px">🗑 Remove</div></div><div class="krow"><div style="flex:1"><b>Google Maps SDK key</b><div class="note">Map picker · ships inside the app</div></div><span class="st ro">IN APP</span><span style="color:#9A9AAC">▸</span></div><div class="krow"><div style="flex:1"><b>Firebase (google-services)</b><div class="note">Sync · ships inside the app</div></div><span class="st ro">IN APP</span><span style="color:#9A9AAC">▸</span></div></div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>4 · Level 2 when the key IS set — only “Remove” (C6)</b><br>Fully masked. No Reveal, no Change. Changing = Remove → Add new.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body"><div class="acc"><div class="ah tk"><span>⇄ Mode</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🗺 Maps &amp; Location</span><span class="car">▸</span></div></div><div class="acc"><div class="ah tk"><span>🔑 API keys</span><span class="car">▾</span></div><div class="krow"><div style="flex:1"><b>Google Geocoding API key</b><div class="note">Address lookups · stored on this phone only · never shown</div></div><span class="st no">NOT SET</span><span style="color:#9A9AAC">▾</span></div><div class="lvl2"><div class="t2" style="font-weight:700">Level 2</div><div class="mask" style="color:#9A9AAC;letter-spacing:0">Paste key…  (input hidden while typing)</div><div class="note">Pasted text stays masked — no eye icon.</div><div class="btn" style="text-align:center;margin-top:6px">＋ Add new</div></div><div class="krow"><div style="flex:1"><b>Google Maps SDK key</b><div class="note">Map picker · ships inside the app</div></div><span class="st ro">IN APP</span><span style="color:#9A9AAC">▸</span></div><div class="krow"><div style="flex:1"><b>Firebase (google-services)</b><div class="note">Sync · ships inside the app</div></div><span class="st ro">IN APP</span><span style="color:#9A9AAC">▸</span></div></div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>5 · Level 2 when the key is NOT set — only “Add new” (C6)</b><br>Paste field is masked while typing (no visibility toggle). “Add new” starts the double confirmation.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body" style="position:relative;padding:0"><div class="dim" style="position:absolute;inset:0"></div><div style="position:absolute;left:14px;right:14px;top:60px" class="card"><div class="t1" style="font-size:13px">Confirm 1 of 2 — remove Google Geocoding key?</div><div class="t2" style="margin:6px 0">Address lookups will use OSM until a new key is added.</div><div class="rowline" style="justify-content:flex-end;gap:12px"><div class="t1" style="color:#6B6B80">Cancel</div><div class="t1" style="color:#D32F2F">Continue</div></div></div><div style="position:absolute;left:14px;right:14px;top:200px" class="card" style="border:1.5px solid #D32F2F"><div class="t1" style="font-size:13px">Confirm 2 of 2 — type <b>Remove</b></div><div class="field" style="margin:6px 0">Remove</div><div class="rowline" style="justify-content:flex-end;gap:12px"><div class="t1" style="color:#6B6B80">Cancel</div><div class="t1" style="color:#D32F2F">Remove key</div></div></div><div class="toast" style="bottom:90px">Google Geocoding key removed · using OSM for address lookups</div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>6 · Remove = double confirmation, second one TYPED “Remove” (C7)</b><br>Button stays disabled until the word matches exactly. Log line records the removal (no key material).</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow"><div><div class="app">Settings</div><div class="subt">General · Task mode</div></div><div class="modechip">🛒 Shop mode</div></div></div><div class="body" style="position:relative;padding:0"><div class="dim" style="position:absolute;inset:0"></div><div style="position:absolute;left:14px;right:14px;top:60px" class="card"><div class="t1" style="font-size:13px">Confirm 1 of 2 — add Google Geocoding key?</div><div class="t2" style="margin:6px 0">The key will be stored on this phone only and used for address lookups.</div><div class="rowline" style="justify-content:flex-end;gap:12px"><div class="t1" style="color:#6B6B80">Cancel</div><div class="t1" style="color:#5B4FE8">Continue</div></div></div><div style="position:absolute;left:14px;right:14px;top:200px" class="card" style="border:1.5px solid #5B4FE8"><div class="t1" style="font-size:13px">Confirm 2 of 2 — type <b>SAVE</b></div><div class="field" style="margin:6px 0">SAVE</div><div class="rowline" style="justify-content:flex-end;gap:12px"><div class="t1" style="color:#6B6B80">Cancel</div><div class="t1" style="color:#5B4FE8">Add key</div></div></div><div class="toast" style="bottom:90px">Google Geocoding key added · Google active for address lookups</div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>7 · Add new = double confirmation, second one TYPED “SAVE”</b><br>Same two-step shape as Remove so both writes feel identical.</div></div>
+</div><h2 class="sec">B — Editors (proposal)</h2><div class="grid"><div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr shop"><div class="hrow"><div><div class="app">Shops</div><div class="subt">2 cities · 5 shops</div></div><div class="modechip">✔ Task mode</div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div><div style="position:absolute;left:0;right:0;bottom:0"><div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Edit shop</div><div class="field"><span class="lbl">Shop name</span>More Supermarket</div><div class="btn outline">📍 Location set ✓ · change on map</div><div class="t2" style="font-weight:700;margin-top:8px">Geofence radius</div><div class="dd">250 m<span class="car">▾</span></div><div class="abtn" style="margin-top:8px"><div class="del">Delete</div><div class="cancel">Cancel</div><div class="save">Save</div></div><div class="clear" style="height:110px;display:flex;align-items:center;justify-content:center">Option D clearance (25%)</div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap "><b>8 · (proposal) same dropdown in the shop / place editors and the map picker</b><br>For consistency with the settings dropdown — review item 1 below.</div></div>
+</div>
+<h2 class="sec">C — Key handling rules (what “never revealed” means in code)</h2>
+<div class="er"><table style="border-collapse:collapse;font-size:12px;width:100%">
+<tr style="background:#EFEFF5"><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">SrNo.</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">Surface</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">Rule</th></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">1</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Screen</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Status only (SET / NOT SET / IN APP); input masked while typing; no eye icon; no suffix</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">2</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Storage</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Encrypted prefs (self-healing, PinStore pattern); excluded from Auto Backup and from every export/share/JSON</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">3</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Logs / errors</td><td style="padding:6px 8px;border:1px solid #D5D5DF">“API key added/removed” lines only; HTTP errors logged with the key parameter stripped from URLs</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">4</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Writes</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Add new → Confirm 1 + typed SAVE · Remove → Confirm 1 + typed Remove · no Change (remove, then add)</td></tr>
+</table></div></body></html>

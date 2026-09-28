@@ -1,0 +1,18 @@
+# --- secrets: NEVER committed ---
+*.keystore
+*.jks
+keystore.properties
+local.properties
+app/google-services.json
+# --- build output ---
+build/
+app/build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+# --- IDE / OS ---
+.idea/
+*.iml
+.DS_Store
+captures/

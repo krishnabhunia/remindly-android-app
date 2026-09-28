@@ -1,0 +1,229 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remindly — N44 Round 2 · delete = record + every future alert</title><style>
+  :root{
+    --ink:#1B1B26; --sub:#6B6B80; --hint:#9A9AAC; --faint:#B9B9C6;
+    --surface:#F4F4F9; --card:#FFFFFF;
+    --tasks:#5B4FE8; --tasks-g1:#4C3FD6; --tasks-g2:#8E5BF0; --tasks-chip:#EDEAFD; --tasks-on:#3A2FA8;
+    --shop:#0E9F6E; --shop-g1:#0E9F6E; --shop-g2:#00B8A9; --shop-chip:#E0F5EE; --shop-on:#0B6E4F;
+    --red:#D32F2F; --amber:#9A6A00; --blue:#1A56DB;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',Roboto,Arial,sans-serif;}
+  body{background:#ECECF2; color:var(--ink); padding:24px;}
+  h1{font-size:22px; margin-bottom:4px;}
+  .meta{color:var(--sub); font-size:13px; margin-bottom:20px;}
+  h2.sec{font-size:17px; margin:28px 0 12px; padding-bottom:6px; border-bottom:2px solid #C9C9D6;}
+  .grid{display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start;}
+  .unit{width:312px;}
+  .phone{width:312px; height:648px; background:var(--surface); border:8px solid #23232E; border-radius:30px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.18);}
+  .status{height:20px; background:transparent; display:flex; justify-content:space-between; padding:3px 14px; font-size:9px; color:#fff; position:relative; z-index:2;}
+  .hdr{padding:2px 14px 12px; color:#fff; margin-top:-20px; padding-top:24px;}
+  .hdr.tasks{background:linear-gradient(120deg,var(--tasks-g1),var(--tasks-g2));}
+  .hdr.shop{background:linear-gradient(120deg,var(--shop-g1),var(--shop-g2));}
+  .hrow{display:flex; align-items:center; justify-content:space-between;}
+  .app{font-size:17px; font-weight:700;}
+  .subt{font-size:11px; opacity:.9; margin-top:2px;}
+  .modechip{background:rgba(255,255,255,.22); border:1px solid rgba(255,255,255,.55); border-radius:14px; padding:4px 9px; font-size:10px; font-weight:600; display:flex; align-items:center; gap:4px;}
+  .body{flex:1; overflow:hidden; padding:10px 10px 0; display:flex; flex-direction:column; gap:8px;}
+  .card{background:var(--card); border-radius:12px; padding:9px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .rowline{display:flex; align-items:center; gap:8px;}
+  .grow{flex:1; min-width:0;}
+  .t1{font-size:12.5px; font-weight:600;}
+  .t2{font-size:10px; color:var(--sub);}
+  .t3{font-size:9.5px; color:var(--hint);}
+  .pill{display:inline-block; font-size:8.5px; font-weight:700; padding:2px 7px; border-radius:9px; letter-spacing:.2px;}
+  .pill.chain{background:var(--shop-chip); color:var(--shop-on); border:1px solid #9FD8C4;}
+  .pill.local{background:#EFEFF5; color:#55556A;}
+  .pill.geo{background:#E8F0FE; color:#1A56DB;}
+  .pill.nogeo{background:#F1F1F5; color:var(--hint);}
+  .pill.def{background:#FFF3D6; color:#9A6A00;}
+  .pill.qty{background:#EFEFF5; color:#44445A;}
+  .pill.best{background:#E7F6EC; color:#1FA463;}
+  .ghead{font-size:10.5px; font-weight:700; color:var(--shop-on); background:var(--shop-chip); padding:4px 9px; border-radius:9px;}
+  .ghead.tk{color:var(--tasks-on); background:var(--tasks-chip);}
+  .check{width:16px; height:16px; border:2px solid var(--hint); border-radius:5px; flex:none;}
+  .star{color:#E5A400; font-size:13px;}
+  .iconbtn{color:var(--sub); font-size:12px;}
+  .btn{display:flex; align-items:center; justify-content:center; gap:6px; background:var(--shop); color:#fff; font-size:11.5px; font-weight:600; padding:8px; border-radius:11px;}
+  .btn.outline{background:#fff; color:var(--shop); border:1.5px solid var(--shop);}
+  .fab{position:relative; align-self:flex-end; margin:2px 4px 8px 0; width:44px; height:44px; border-radius:15px; background:var(--shop); color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(14,159,110,.4);}
+  .fab.tk{background:var(--tasks); box-shadow:0 4px 10px rgba(91,79,232,.4);}
+  .nav{height:56px; background:#fff; border-top:1px solid #E4E4EC; display:flex;}
+  .nitem{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:8.5px; color:#9A9AAC; font-weight:600;}
+  .nitem .nico{font-size:15px;}
+  .nitem.on{color:var(--shop);}
+  .nitem.on .bg{background:rgba(14,159,110,.14); border-radius:12px; padding:1px 12px;}
+  .nitem.ontk{color:var(--tasks);}
+  .nitem.ontk .bg{background:rgba(91,79,232,.14); border-radius:12px; padding:1px 12px;}
+  .cap{font-size:11.5px; color:#3A3A4C; background:#fff; border-left:4px solid var(--shop); border-radius:8px; padding:8px 10px; margin-top:8px; line-height:1.45;}
+  .cap.tk{border-left-color:var(--tasks);}
+  .cap b{color:#111;}
+  .search{background:#fff; border:1px solid #DCDCE6; border-radius:11px; padding:7px 10px; font-size:11px; color:var(--hint); display:flex; gap:6px; align-items:center;}
+  .chips{display:flex; gap:6px; flex-wrap:wrap;}
+  .fchip{font-size:9.5px; padding:4px 9px; border-radius:12px; background:#fff; border:1px solid #D8D8E2; color:#55556A;}
+  .fchip.on{background:var(--shop); border-color:var(--shop); color:#fff; font-weight:600;}
+  .field{border:1.4px solid #C9C9D6; border-radius:10px; padding:7px 9px; font-size:11px; color:var(--ink); background:#fff;}
+  .field .lbl{display:block; font-size:8.5px; color:var(--sub); margin-bottom:1px;}
+  .seg{display:flex; border:1.5px solid var(--shop); border-radius:11px; overflow:hidden;}
+  .seg div{flex:1; text-align:center; font-size:10.5px; font-weight:600; padding:6px; color:var(--shop);}
+  .seg .on{background:var(--shop); color:#fff;}
+  .switch{width:30px; height:17px; border-radius:9px; background:var(--shop); position:relative; flex:none;}
+  .switch::after{content:''; position:absolute; right:2px; top:2px; width:13px; height:13px; border-radius:50%; background:#fff;}
+  .switch.off{background:#C9C9D6;} .switch.off::after{left:2px; right:auto;}
+  .slider{height:4px; background:#DADAE4; border-radius:2px; position:relative; margin:10px 2px 4px;}
+  .slider .fill{position:absolute; left:0; top:0; height:4px; width:38%; background:var(--shop); border-radius:2px;}
+  .slider .knob{position:absolute; left:38%; top:-5px; width:14px; height:14px; background:var(--shop); border-radius:50%;}
+  .ticks{display:flex; justify-content:space-between; font-size:8px; color:var(--hint); margin-top:2px;}
+  .sheet{background:#fff; border-radius:18px 18px 0 0; margin-top:auto; padding:12px 12px 6px; box-shadow:0 -4px 16px rgba(0,0,0,.15); display:flex; flex-direction:column; gap:8px;}
+  .handle{width:34px; height:4px; background:#D5D5DF; border-radius:2px; align-self:center; margin-bottom:2px;}
+  .dim{flex:1; background:rgba(20,20,30,.35);}
+  .spacer-note{font-size:8px; color:var(--hint); text-align:center; padding:5px 0 2px; border-top:1px dashed #E0E0EA;}
+  .setrow{display:flex; align-items:center; gap:8px; padding:8px 2px; border-bottom:1px solid #F0F0F6;}
+  .setrow:last-child{border-bottom:none;}
+  .sethead{font-size:10px; font-weight:700; color:var(--shop-on); margin:4px 2px 0; letter-spacing:.3px;}
+  /* ER diagram */
+  .er{background:#fff; border-radius:14px; padding:18px; overflow-x:auto;}
+  .erwrap{display:flex; gap:34px; align-items:flex-start; min-width:900px; position:relative;}
+  .ent{width:172px; border:2px solid #1B1B26; border-radius:10px; overflow:hidden; flex:none;}
+  .ent .eh{padding:6px 10px; font-weight:700; font-size:12.5px; color:#111;}
+  .ent .eb{padding:7px 10px; font-size:10.5px; line-height:1.65; background:#fff; border-top:2px solid #1B1B26; color:#222;}
+  .ent .eb i{color:#666;}
+  .rel{font-size:10.5px; font-weight:700; color:#333; align-self:center; text-align:center; line-height:1.4;}
+  .arrow{font-size:16px; color:#333;}
+  .lane{display:flex; flex-direction:column; gap:22px;}
+  .keynote{font-size:11px; color:#444; margin-top:12px; line-height:1.6;}
+  .kbd{background:#EFEFF5; border:1px solid #D5D5DF; border-radius:4px; padding:0 5px; font-size:10px;}
+
+  /* N32 additions */
+  .sysbar{height:26px; background:#0F0F14; display:flex; justify-content:space-around; align-items:center; color:#fff; font-size:12px; letter-spacing:6px; flex:none;}
+  .sysbar.gesture{height:12px; letter-spacing:0;} .sysbar.gesture::after{content:''; width:90px; height:3px; background:#fff; border-radius:2px;}
+  .clear{background:repeating-linear-gradient(135deg,#E7F6EC,#E7F6EC 6px,#F6FBF7 6px,#F6FBF7 12px); border:1px dashed #1FA463; color:#0B6E4F; font-size:8.5px; text-align:center; padding:3px 0; border-radius:6px;}
+  .acc{background:#fff; border-radius:12px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .acc .ah{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:#0B6E4F;}
+  .acc .ah.tk{color:#3A2FA8;}
+  .acc .ah .car{margin-left:auto; color:#9A9AAC; font-weight:400;}
+  .arow{display:flex; align-items:center; gap:8px; padding:7px 2px; border-top:1px solid #F0F0F6; font-size:11px;}
+  .arow .l{flex:1;} .arow .l .s{font-size:9.5px; color:#6B6B80;}
+  .abtn{display:flex; gap:8px;} .abtn div{flex:1; text-align:center; font-size:12px; font-weight:700; padding:11px 0; border-radius:12px;}
+  .abtn .cancel{border:1.5px solid #C9C9D6; color:#55556A; background:#fff;}
+  .abtn .save{background:var(--shop); color:#fff;} .abtn .save.tk{background:var(--tasks);}
+  .abtn .del{border:1.5px solid #F2B8B5; color:#D32F2F; background:#fff;}
+  .linkrow{background:#fff; border:1.5px solid #9FD8C4; border-radius:12px; padding:9px 10px; display:flex; align-items:center; font-size:11.5px; font-weight:600;}
+
+  .hdr.learn{background:linear-gradient(120deg,#F2711C,#E8467C);} .hdr.calls{background:linear-gradient(120deg,#1565C0,#26C6DA);}
+  .abtn .save.learn{background:#EE5A24;} .abtn .save.calls{background:#1E88E5;}
+  .nitem.onln{color:#EE5A24;} .nitem.onln .bg{background:rgba(238,90,36,.14); border-radius:12px; padding:1px 12px;}
+  .nitem.oncl{color:#1E88E5;} .nitem.oncl .bg{background:rgba(30,136,229,.14); border-radius:12px; padding:1px 12px;}
+  .segchip{display:inline-block; font-size:9px; padding:3px 8px; border-radius:10px; border:1px solid #D8D8E2; color:#55556A; margin-right:4px;}
+
+  .map{position:relative; height:330px; background:#EAF3E6; overflow:hidden; border-radius:10px; margin:6px 0;}
+  .map.osm{background:#F2EFE9;}
+  .rd{position:absolute; background:#fff; border:1px solid #D9D9D9;} .map.osm .rd{background:#fff; border-color:#E5C97B;}
+  .rd.h{height:10px; left:0; right:0;} .rd.v{width:10px; top:0; bottom:0;}
+  .lbl2{position:absolute; font-size:8px; color:#5C6B5C; background:rgba(255,255,255,.7); padding:0 3px; border-radius:3px;}
+  .pin{position:absolute; left:50%; top:46%; transform:translate(-50%,-100%); font-size:22px;}
+  .ring{position:absolute; left:50%; top:46%; width:120px; height:120px; border:2px solid rgba(14,159,110,.8); background:rgba(14,159,110,.15); border-radius:50%; transform:translate(-50%,-50%);}
+  .attrib{position:absolute; right:6px; bottom:4px; font-size:7.5px; color:#555; background:rgba(255,255,255,.75); padding:1px 4px; border-radius:3px;}
+  .badge{position:absolute; left:8px; top:8px; font-size:9px; font-weight:700; color:#fff; padding:3px 8px; border-radius:10px; background:#1A73E8;}
+  .badge.osm{background:#7B5E2B;}
+  .prog{height:8px; background:#EDEDF3; border-radius:4px; overflow:hidden; margin:4px 0;} .prog>div{height:100%; background:#0E9F6E;} .prog.full>div{background:#D32F2F;}
+  .chip2{display:inline-block; font-size:10px; font-weight:700; padding:5px 12px; border-radius:14px; border:1.5px solid #C9C9D6; color:#55556A; margin-right:6px;}
+  .chip2.on{background:#5B4FE8; border-color:#5B4FE8; color:#fff;} .chip2.dis{opacity:.45; text-decoration:line-through;}
+  .keyf{border:1px solid #C9C9D6; border-radius:10px; padding:7px 9px; font-size:10.5px; letter-spacing:2px; color:#333; background:#fff;}
+  .note{font-size:9px; color:#6B6B80; margin-top:4px;}
+  .toast{position:absolute; left:14px; right:14px; bottom:60px; background:#1F1F2E; color:#fff; font-size:10.5px; padding:9px 12px; border-radius:10px;}
+  .flow{display:flex; flex-wrap:wrap; gap:8px; align-items:center;} .fb{background:#fff; border:1.5px solid #B9B9CC; border-radius:10px; padding:8px 10px; font-size:11.5px; min-width:120px;}
+  .fb.y{border-color:#0E9F6E; background:#E7F6EC;} .fb.n{border-color:#D32F2F; background:#FDECEA;} .arr{font-size:16px; color:#666;}
+
+  .lvl2{border-left:3px solid #C9C9D6; margin:6px 0 4px 6px; padding:6px 0 4px 10px;}
+  .krow{display:flex; align-items:center; gap:8px; padding:6px 2px; border-top:1px solid #F0F0F6; font-size:11px;}
+  .krow .st{font-size:9px; font-weight:700; padding:2px 7px; border-radius:9px;} .st.ok{background:#E7F6EC;color:#0B6E4F;} .st.no{background:#FFF4E5;color:#B7791F;} .st.ro{background:#EEF0F4;color:#55556A;}
+  .dot{position:absolute; left:50%; top:46%; width:14px; height:14px; margin:-7px 0 0 -7px; background:#1A73E8; border:3px solid #fff; border-radius:50%; box-shadow:0 0 0 2px #1A73E8;}
+  .acc2{position:absolute; left:50%; top:46%; width:70px; height:70px; margin:-35px 0 0 -35px; border-radius:50%; background:rgba(26,115,232,.18); border:1px solid rgba(26,115,232,.5);}
+  .scale{display:flex; gap:3px; flex-wrap:wrap; margin:4px 0;} .scale span{font-size:8.5px; padding:3px 5px; border-radius:8px; border:1px solid #C9C9D6; color:#55556A;} .scale span.on{background:#0E9F6E; border-color:#0E9F6E; color:#fff; font-weight:700;}
+  .mybtn{position:absolute; right:8px; bottom:26px; background:#fff; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 1px 4px rgba(0,0,0,.25);}
+
+  .dd{border:1px solid #C9C9D6; border-radius:10px; padding:8px 10px; font-size:11.5px; display:flex; align-items:center; background:#fff;} .dd .car{margin-left:auto; color:#9A9AAC;}
+  .ddl{border:1px solid #C9C9D6; border-radius:10px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,.12); margin-top:4px; overflow:hidden;}
+  .ddl div{padding:6px 12px; font-size:11px; border-top:1px solid #F0F0F6;} .ddl div.on{background:#E7F6EC; color:#0B6E4F; font-weight:700;}
+  .mask{border:1px solid #C9C9D6; border-radius:10px; padding:8px 10px; font-size:12px; letter-spacing:3px; color:#333; background:#fff;}
+
+  .shoprow{display:flex; align-items:center; gap:8px; background:#fff; border-radius:12px; padding:9px 8px; margin:5px 0; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .shoprow .nm{flex:1; min-width:0;} .shoprow .nm .n{font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:6px;}
+  .shoprow .nm .s{font-size:9.5px; color:#8A8A9A;} .pill2{flex:none; font-size:8.5px; font-weight:700; padding:2px 7px; border-radius:9px; background:#E0F5EE; color:#0B6E4F; white-space:nowrap;}
+  .pill2.local{background:#EFEFF5; color:#55556A;} .pill2.bad{white-space:normal; width:24px; line-height:1.1; text-align:center;}
+  .gear{font-size:14px; margin-right:8px;}
+  .gh{display:flex; align-items:center; gap:8px; margin-top:6px;}
+
+  .ham{font-size:20px; color:#fff; margin-right:12px; line-height:1;}
+  .drawer{position:absolute; left:0; top:0; bottom:0; width:74%; background:#fff; box-shadow:4px 0 16px rgba(0,0,0,.25); padding:14px 12px; display:flex; flex-direction:column; z-index:5;}
+  .drow{display:flex; align-items:center; gap:10px; padding:11px 10px; border-radius:12px; font-size:13px; font-weight:600;}
+  .drow.on{background:#EEF0FB; color:#3A2FA8;} .drow.onsh{background:#E0F5EE; color:#0B6E4F;} .drow .ck{margin-left:auto; font-weight:800;}
+  .dhead{font-size:10px; font-weight:800; letter-spacing:.06em; color:#9A9AAC; padding:4px 10px 6px;}
+
+  .alarm{position:absolute; inset:0; background:linear-gradient(160deg,#0E9F6E,#00B8A9); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;}
+  .alarm .big{font-size:20px; font-weight:800; margin:6px 0;} .alarm .items{background:rgba(255,255,255,.18); border-radius:12px; padding:10px 14px; font-size:12px; text-align:left; margin:10px 0; width:100%;}
+  .alarm .abtn div{background:#fff; color:#0B6E4F;} .alarm .abtn .ghost{background:rgba(255,255,255,.2); color:#fff; border:1.5px solid rgba(255,255,255,.7);}
+  .notif{background:#fff; border-radius:12px; padding:10px 12px; margin:6px 0; box-shadow:0 2px 8px rgba(0,0,0,.15); font-size:11px;}
+  .notif .h{display:flex; align-items:center; gap:6px; font-size:9.5px; color:#6B6B80; margin-bottom:3px;} .notif .ttl{font-weight:700; font-size:12px;}
+  .notif .acts{display:flex; gap:14px; margin-top:6px; font-size:10.5px; font-weight:700; color:#1A56DB;}
+  .kchip{display:inline-block; font-size:10px; font-weight:700; padding:5px 11px; border-radius:14px; border:1.5px solid #C9C9D6; color:#55556A; margin-right:6px;} .kchip.on{background:#0E9F6E; border-color:#0E9F6E; color:#fff;} .kchip.def{background:#EEF0F4; border-color:#B9B9CC; color:#333;}
+
+  .seg3{display:flex; background:rgba(255,255,255,.22); border-radius:50px; padding:3px; gap:2px; margin-top:10px;}
+  .seg3 div{flex:1; text-align:center; font-size:10.5px; font-weight:700; color:#fff; padding:6px 4px; border-radius:50px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .seg3 div.on{background:#fff; color:#0B6E4F;}
+  .seg3 div.buy{position:relative;}
+  .banner{display:flex; align-items:center; gap:8px; background:#E7F6EC; border:1px solid #9FD8C4; border-radius:12px; padding:8px 10px; font-size:10.5px; color:#0B6E4F; margin:6px 0;}
+  .banner .x{margin-left:auto; font-weight:800; color:#0B6E4F; border:1px solid #9FD8C4; border-radius:50px; padding:1px 8px;}
+  .tick{width:20px;height:20px;border-radius:6px;border:2px solid #0E9F6E;display:flex;align-items:center;justify-content:center;color:#0E9F6E;font-size:12px;font-weight:800;}
+  .tick.done{background:#0E9F6E;color:#fff;}
+  .strike{text-decoration:line-through; color:#8A8A9A;}
+
+  .srow{display:flex; gap:8px; align-items:flex-start; background:#fff; border-radius:12px; padding:9px 10px; margin:5px 0; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .srow .when{width:82px; flex:none; font-size:10px; font-weight:700; color:#3A2FA8;}
+  .srow .mid{flex:1; min-width:0;} .srow .ttl{font-size:11.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .srow .sub{font-size:9.5px; color:#6B6B80;}
+  .srow .ico{font-size:13px; flex:none;}
+  .warn{background:#FFF4E5; border:1px solid #F0C27A;} .warn .when{color:#B7791F;}
+  .flag{display:inline-block; font-size:8.5px; font-weight:700; color:#B7791F; background:#FFEBCC; border-radius:8px; padding:1px 6px; margin-left:4px;}
+  .daybar{font-size:9.5px; font-weight:800; color:#8A8A9A; letter-spacing:.06em; margin:10px 2px 2px;}
+  .fbar{display:flex; gap:6px; margin:6px 0; overflow:hidden;}
+  .fbar span{font-size:9.5px; padding:4px 9px; border-radius:12px; border:1px solid #C9C9D6; color:#55556A; white-space:nowrap;}
+  .fbar span.on{background:#3A2FA8; border-color:#3A2FA8; color:#fff; font-weight:700;}
+  .banner2{display:flex; gap:8px; align-items:center; background:#FFF4E5; border:1px solid #F0C27A; border-radius:12px; padding:9px 10px; font-size:10.5px; color:#8A5B00; margin:6px 0;}
+
+  .menu{position:absolute; left:14px; right:14px; top:120px; background:#fff; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.25); padding:10px 12px; z-index:5;}
+  .menu .mt{font-size:12.5px; font-weight:800;} .menu .ms{font-size:10px; color:#6B6B80; margin-bottom:6px;}
+  .menu .mi{font-size:11.5px; font-weight:600; color:#3A2FA8; padding:8px 2px; border-top:1px solid #F0F0F6;}
+  .menu .mi.red{color:#D32F2F;} .menu .mi.dim{color:#9A9AAC;}
+  .swipe{display:flex; border-radius:12px; overflow:hidden; margin:5px 0;}
+  .swipe .del{background:#D32F2F; color:#fff; font-size:10px; font-weight:800; display:flex; align-items:center; padding:0 14px;}
+  .selbar{position:absolute; left:0; right:0; bottom:0; background:#1F1F2E; color:#fff; padding:10px 14px; display:flex; align-items:center; gap:10px; font-size:11px;}
+  .selbar .b{margin-left:auto; background:#D32F2F; border-radius:10px; padding:6px 12px; font-weight:800;}
+  .chk{width:16px;height:16px;border-radius:4px;border:2px solid #3A2FA8;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex:none;} .chk.on{background:#3A2FA8;}
+  .mute{color:#9A9AAC; font-size:10px;}
+</style></head><body>
+<h1>Remindly — N44 Design Round 2: “Delete the item” removes every future and pending alert</h1>
+<div class="meta">12-Sep-2026 · your clarification: “Delete the item (to Bin) must delete all future and all scheduler events.” Round 1 (menu, mute, swipe, multi-select option) stands; these frames show the full-deletion path and the guarantee behind it. HTML frames only — nothing built.</div>
+<div class="grid">
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow" style="align-items:center"><div style="display:flex;align-items:center"><span class="ham">←</span><div><div class="app">Scheduled alerts</div><div class="subt">23 armed · 3 need attention</div></div></div></div></div><div class="body" style="position:relative"><div class="fbar"><span class="on">Next 24 h</span><span>7 days</span><span>All</span></div><div class="daybar">TODAY</div><div class="srow "><div class="when">09:40 · 12m</div><div class="ico">⏰</div><div class="mid"><div class="ttl">Morning medicines</div><div class="sub">Tasks · recurring · Alarm</div></div><div style="color:#B0B0C0">⋮</div></div><div class="srow "><div class="when">13:30</div><div class="ico">🔊</div><div class="mid"><div class="ttl">Call back · Ramesh</div><div class="sub">Calls · recurring · Ring</div></div><div style="color:#B0B0C0">⋮</div></div><div class="srow "><div class="when">19:15</div><div class="ico">🔊</div><div class="mid"><div class="ttl">D-Mart – Kalyan</div><div class="sub">Shop arrival · snoozed · Ring</div></div><div style="color:#B0B0C0">⋮</div></div><div class="dim" style="position:absolute;inset:0"></div><div class="menu"><div class="mt">Morning medicines</div><div class="ms">Tasks · recurring daily · Alarm · 09:40 today</div><div class="mi">📄 Open the item</div><div class="mi red">🗑 Delete this alert (mute, item stays)</div><div class="mi red">🗑 Delete the item — and every future alert</div><div class="mi dim">Close</div></div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>1 · Row menu — the two deletions, labelled by consequence</b><br>“Delete this alert” keeps the record. “Delete the item — and every future alert” is the one you asked about: the record goes to the Bin and NOTHING of it stays armed.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow" style="align-items:center"><div style="display:flex;align-items:center"><span class="ham">←</span><div><div class="app">Scheduled alerts</div><div class="subt">23 armed</div></div></div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div><div style="position:absolute;left:0;right:0;bottom:0"><div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#5B4FE8">Delete “Morning medicines”?</div><div class="t2">Tasks · recurring daily · to the Bin</div><div class="t2" style="font-weight:700;margin-top:8px">This removes the item AND all of these:</div><div class="card" style="margin-top:8px;border:1px solid #D8D8E2"><div class="t2">⏰ Due alert · today 09:40</div><div class="t2">🔁 Next occurrences · daily (no more returns)</div><div class="t2">💤 Snooze · none</div><div class="t2">🔔 Overdue nag · cancelled</div><div class="t2">🕊 Quiet re-fire · cancelled</div></div><div class="note">Nothing of this item will ever fire again. Restore from the Bin re-arms only what the item still has (Undo for a few seconds too).</div><div class="abtn" style="margin-top:8px"><div class="cancel">Cancel</div><div class="save" style="background:#D32F2F">Delete item + all alerts</div></div><div class="clear" style="height:100px;display:flex;align-items:center;justify-content:center">Option D clearance (25%)</div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap tk"><b>2 · Confirm — an item: the record plus EVERY scheduler event</b><br>The sheet enumerates each armed trigger it is cancelling — due, future occurrences, snooze, overdue nag, quiet re-fire. That list comes from the same builder the page uses, so it cannot miss one.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow" style="align-items:center"><div style="display:flex;align-items:center"><span class="ham">←</span><div><div class="app">Scheduled alerts</div><div class="subt">23 armed</div></div></div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div><div style="position:absolute;left:0;right:0;bottom:0"><div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#1E88E5">Delete reminder “Ramesh”?</div><div class="t2">Calls · recurring weekly · to the Bin</div><div class="t2" style="font-weight:700;margin-top:8px">This removes the reminder AND all of these:</div><div class="card" style="margin-top:8px;border:1px solid #D8D8E2"><div class="t2">📞 Recurring reminder · weekly (stops)</div><div class="t2">🔔 Overdue nag · cancelled</div><div class="t2">💤 Snooze · cancelled</div><div class="t2">🕊 Quiet re-fire · cancelled</div></div><div class="note">Today only the snooze and quiet re-fire were cancelled on delete — the recurring and overdue alarms stayed armed (harmless but wrong). Fixed here.</div><div class="abtn" style="margin-top:8px"><div class="cancel">Cancel</div><div class="save" style="background:#D32F2F">Delete reminder + all alerts</div></div><div class="clear" style="height:100px;display:flex;align-items:center;justify-content:center">Option D clearance (25%)</div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap tk"><b>3 · Confirm — a call reminder (the gap I found)</b><br>Same shape for Calls. The two alarm types that were left armed after a delete are now cancelled with the rest.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow" style="align-items:center"><div style="display:flex;align-items:center"><span class="ham">←</span><div><div class="app">Scheduled alerts</div><div class="subt">23 armed</div></div></div></div></div><div class="body" style="padding:0;position:relative"><div class="dim" style="position:absolute;inset:0"></div><div style="position:absolute;left:0;right:0;bottom:0"><div class="sheet"><div class="handle"></div><div class="t1" style="font-size:14px;color:#0E9F6E">Delete shop “D-Mart – Kalyan”?</div><div class="t2">Shops · geofenced · to the Bin</div><div class="t2" style="font-weight:700;margin-top:8px">This removes the shop AND all of these:</div><div class="card" style="margin-top:8px;border:1px solid #D8D8E2"><div class="t2">📍 Arrival geofence · 150 m · unregistered</div><div class="t2">💤 Snoozed arrival re-fire · cancelled</div><div class="t2">🛒 Buy Now for this shop · hidden</div></div><div class="note">Buy items tagged with the shop keep their names.</div><div class="abtn" style="margin-top:8px"><div class="cancel">Cancel</div><div class="save" style="background:#D32F2F">Delete shop + all alerts</div></div><div class="clear" style="height:100px;display:flex;align-items:center;justify-content:center">Option D clearance (25%)</div></div><div class="sysbar">◁ ○ □</div></div></div></div><div class="cap tk"><b>4 · Confirm — a shop</b><br>Geofence unregistered, any snoozed re-fire cancelled, an armed Buy Now for that shop hidden.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow" style="align-items:center"><div style="display:flex;align-items:center"><span class="ham">←</span><div><div class="app">Scheduled alerts</div><div class="subt">20 armed · 3 need attention</div></div></div></div></div><div class="body" style="position:relative"><div class="fbar"><span class="on">Next 24 h</span><span>7 days</span><span>All</span></div><div class="daybar">TODAY</div><div class="srow "><div class="when">13:30</div><div class="ico">🔊</div><div class="mid"><div class="ttl">Call back · Ramesh</div><div class="sub">Calls · recurring · Ring</div></div><div style="color:#B0B0C0">⋮</div></div><div class="srow "><div class="when">19:15</div><div class="ico">🔊</div><div class="mid"><div class="ttl">D-Mart – Kalyan</div><div class="sub">Shop arrival · snoozed · Ring</div></div><div style="color:#B0B0C0">⋮</div></div><div class="toast" style="bottom:60px">Deleted “Morning medicines” + 3 alerts · Undo</div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>5 · After — the rows vanish at once, one Undo</b><br>The header count drops by every trigger removed (3 here), not by one.</div></div>
+<div class="unit"><div class="phone"><div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+<div class="hdr tasks"><div class="hrow" style="align-items:center"><div style="display:flex;align-items:center"><span class="ham">←</span><div><div class="app">Recently deleted</div><div class="subt">Settings · Bin</div></div></div></div></div><div class="body"><div class="srow"><div class="ico">⏰</div><div class="mid"><div class="ttl">Morning medicines</div><div class="sub">Tasks · deleted just now · restore re-arms: due 09:40, daily recurrence</div></div><div style="color:#3A2FA8;font-weight:800">Restore</div></div><div class="srow"><div class="ico">📞</div><div class="mid"><div class="ttl">Ramesh</div><div class="sub">Calls · deleted 2 d ago · restore re-arms: weekly</div></div><div style="color:#3A2FA8;font-weight:800">Restore</div></div><div class="note" style="margin-top:8px">While in the Bin nothing is armed. Restoring re-schedules exactly what the record has — the same rule the app already follows for reboot.</div></div><div class="nav"><div class="nitem"><div><div class="nico">✔</div></div><div>Tasks</div></div><div class="nitem"><div><div class="nico">🎓</div></div><div>Learn</div></div><div class="nitem"><div><div class="nico">📞</div></div><div>Calls</div></div><div class="nitem ontk"><div class="bg"><div class="nico">⚙</div></div><div>Settings</div></div></div></div><div class="cap tk"><b>6 · Bin — restore re-arms, nothing fires meanwhile</b><br>The Bin row says what a restore will re-arm, so the round trip is predictable.</div></div>
+</div>
+<h2 class="sec">The guarantee (unit-tested)</h2>
+<div class="er"><table style="border-collapse:collapse;font-size:12px;width:100%">
+<tr style="background:#EFEFF5"><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">SrNo.</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">Record</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">Every event it can arm</th><th style="text-align:left;padding:6px 8px;border:1px solid #D5D5DF">Delete cancels</th></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">1</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Item</td><td style="padding:6px 8px;border:1px solid #D5D5DF">due · snooze · overdue nag · quiet re-fire · lapse/recurring return · expiry</td><td style="padding:6px 8px;border:1px solid #D5D5DF">all six (already true; now asserted by a test that compares the two sets)</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">2</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Call reminder</td><td style="padding:6px 8px;border:1px solid #D5D5DF">recurring · overdue nag · snooze · quiet re-fire · rule nags</td><td style="padding:6px 8px;border:1px solid #D5D5DF">all five (today: only snooze + quiet re-fire — FIXED)</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">3</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Shop</td><td style="padding:6px 8px;border:1px solid #D5D5DF">geofence · snoozed arrival re-fire · Buy Now arm</td><td style="padding:6px 8px;border:1px solid #D5D5DF">all three</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">4</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Place</td><td style="padding:6px 8px;border:1px solid #D5D5DF">arrive / leave fence</td><td style="padding:6px 8px;border:1px solid #D5D5DF">both (already true)</td></tr>
+<tr><td style="padding:6px 8px;border:1px solid #D5D5DF">5</td><td style="padding:6px 8px;border:1px solid #D5D5DF">Invariant</td><td style="padding:6px 8px;border:1px solid #D5D5DF" colspan="2">The set of alarm types a record can arm ⊆ the set its delete cancels — a unit test fails the build if a future alarm type is added without its cancel.</td></tr>
+</table></div></body></html>

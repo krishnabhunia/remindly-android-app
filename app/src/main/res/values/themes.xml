@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Remindly" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#3F3D9E</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
