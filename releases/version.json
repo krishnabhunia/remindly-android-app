@@ -1,10 +1,10 @@
 {
-  "versionCode": 2009000,
-  "versionName": "2.9",
-  "apk": "Remindly-2.9.apk",
-  "apkUrl": "https://raw.githubusercontent.com/krishnabhunia/remindly-android-app/main/releases/Remindly-2.9.apk",
-  "sha256": "4c6257d1db6dd1d4a26edca95158c500ff89ba59f168ae5c3d3b29efbaa4bd79",
-  "sizeBytes": 16400685,
-  "notes": "In-app updates from GitHub; group icons and menu; product suggestions and mic on quick add; WhatsApp sharing; launch splash.",
+  "versionCode": 2010000,
+  "versionName": "2.10",
+  "apk": "Remindly-2.10.apk",
+  "apkUrl": "https://github.com/krishnabhunia/remindly-android-app/releases/download/v2.10/Remindly-2.10.apk",
+  "sha256": "7cc69d13075ff801e6de85f839a3ac99a9c64370b36e21e7a7858704a4045de3",
+  "sizeBytes": 16422897,
+  "notes": "Every permission is now optional, asked when you use it, and explained first. Before Android's question appears, Remindly says what the permission is for and what still works if you say no.",
   "publishedAt": "2026-09-28"
 }
