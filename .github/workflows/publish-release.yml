@@ -1,6 +1,8 @@
+# FALLBACK path — for an APK built and signed locally and committed under releases/.
+# The normal path is build-release.yml (GitHub Actions builds, signs and publishes).
 # Mirrors releases/version.json + the committed APK into a GitHub Release (tag v<versionName>).
-# No secrets, no build: the APK is built and signed locally and committed under releases/.
-name: Publish release
+# No secrets, no build. Commits made by build-release.yml do not trigger this workflow.
+name: Publish release (locally built APK)
 on:
   push:
     branches: [main]
@@ -18,7 +20,13 @@ jobs:
           echo "name=$(jq -r .versionName releases/version.json)" >> "$GITHUB_OUTPUT"
           echo "apk=$(jq -r .apk releases/version.json)" >> "$GITHUB_OUTPUT"
           echo "notes=$(jq -r .notes releases/version.json)" >> "$GITHUB_OUTPUT"
+      - name: Skip when the APK is not committed (built by Actions instead)
+        id: has
+        run: |
+          if [ -f "releases/${{ steps.v.outputs.apk }}" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::releases/${{ steps.v.outputs.apk }} not in the repo — nothing to publish here"; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - name: Create or update the release
+        if: steps.has.outputs.ok == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

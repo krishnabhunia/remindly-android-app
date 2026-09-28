@@ -13,12 +13,14 @@ android {
 
     defaultConfig {
         // v2.02 (N33): Maps SDK key comes from local.properties (MAPS_API_KEY=...) — never committed.
+        // GitHub Actions supplies it as the MAPS_API_KEY environment variable (a repository secret).
         // Empty ⇒ the app runs the map picker on OSM until a build carries the key.
         manifestPlaceholders["MAPS_API_KEY"] = run {
             val f = rootProject.file("local.properties")
             val props = Properties()
             if (f.exists()) FileInputStream(f).use { props.load(it) }
-            props.getProperty("MAPS_API_KEY", "")
+            props.getProperty("MAPS_API_KEY")?.takeIf { it.isNotBlank() }
+                ?: System.getenv("MAPS_API_KEY").orEmpty()
         }
         applicationId = "com.krishna.remindly"
         minSdk = 26
