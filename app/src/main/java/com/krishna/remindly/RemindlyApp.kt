@@ -101,7 +101,7 @@ class RemindlyApp : Application() {
             val cur = SettingsStore.s.value
             if (!cur.snoozeFixed90) {
                 val old = cur.snoozeM1
-                SettingsStore.update { it.copy(snoozeM1 = if (old == 10) 90 else old, snoozeFixed90 = true) }
+                SettingsStore.update { migrateSnooze90(it) }   // v2.10 (N6 pt2): pure, tested
                 Logger.e(this, "MIGRATE", null, "snooze duration $old -> ${SettingsStore.s.value.snoozeM1} min (Q18)")
             }
         }.onFailure { Logger.e(this, "MIGRATE", it, "snooze migration failed — stored value untouched") }

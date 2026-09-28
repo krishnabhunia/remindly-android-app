@@ -25,8 +25,8 @@ android {
         applicationId = "com.krishna.remindly"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2009000
-        versionName = "2.9"
+        versionCode = 2010000
+        versionName = "2.10"
     }
 
     // Signing material is NEVER in the repository. It comes from keystore.properties (git-ignored)

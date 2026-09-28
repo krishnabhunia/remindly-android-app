@@ -251,17 +251,23 @@ fun MainScaffold(initialTab: Int) {
         selectedTab = target
     }
 
+    // v2.10 (N9 ⚑3): notifications keep their early request (a reminder app can't work without
+    // them) — now recorded and a refusal logged, so Settings → Permissions reports it truthfully.
     val notifLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { }
+    ) { ok -> Perms.onResult(context, PermKeys.NOTIFICATIONS, mapOf(Manifest.permission.POST_NOTIFICATIONS to ok)) }
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {
+            // unchanged cadence (asked at launch until granted; Android itself stops after two
+            // refusals) — only now recorded, so the state is known.
+            Perms.markAsked(PermKeys.NOTIFICATIONS)
             notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+        Perms.syncGranted(context)   // v2.10 (N9): upgraded installs keep revoke → banner semantics
         AlarmScheduler.rescheduleAll(context)
         runCatching { Degrades.refresh(context) }   // v1.71 (N2)
         Geofencer.registerAll(context)

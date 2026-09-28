@@ -34,7 +34,11 @@ data class UiState(
     val buyNowAt: Long = 0L,
     // v2.9 (N47): update feed state — last check time and the newest feed seen (per device).
     val updateLastCheck: Long = 0L,
-    val updateFeedJson: String? = null
+    val updateFeedJson: String? = null,
+    // v2.10 (N9): per-device permission record — which system dialogs were shown (or granted at
+    // some point) and which pre-prompts were seen. Only this tells "never asked" from "blocked".
+    val permAsked: Set<String> = emptySet(),
+    val permPrompted: Set<String> = emptySet()
 )
 
 // Gson-safe twin: every field nullable, defaults reapplied on load.
@@ -53,7 +57,9 @@ private data class UiStateRaw(
     val buyNowShopId: Long?,
     val buyNowAt: Long?,
     val updateLastCheck: Long?,
-    val updateFeedJson: String?
+    val updateFeedJson: String?,
+    val permAsked: Set<String>?,
+    val permPrompted: Set<String>?
 )
 
 /** Gson-safe twin of GeoUsage (fields may be null in old/partial JSON). */
@@ -85,7 +91,9 @@ object UiStore {
                 buyNowShopId = r.buyNowShopId,
                 buyNowAt = r.buyNowAt ?: 0L,
                 updateLastCheck = r.updateLastCheck ?: 0L,
-                updateFeedJson = r.updateFeedJson
+                updateFeedJson = r.updateFeedJson,
+                permAsked = r.permAsked ?: emptySet(),
+                permPrompted = r.permPrompted ?: emptySet()
             )
         }
     }

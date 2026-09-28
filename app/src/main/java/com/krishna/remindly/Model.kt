@@ -427,7 +427,7 @@ fun sheetClearanceDp(windowHeightDp: Float, navBottomDp: Float, imeVisible: Bool
  */
 fun settingsSectionVisible(filterKey: String?, key: String): Boolean = when (filterKey) {
     // v2.04 (N36): "shop-mode" (Start in) is gone — the ☰ drawer owns the mode, always last used.
-    null -> key in setOf("updates", "maps", "api-keys", "alerts", "adding", "done", "lists", "sched", "gestures", "swipe", "clock",
+    null -> key in setOf("permissions", "updates", "maps", "api-keys", "alerts", "adding", "done", "lists", "sched", "gestures", "swipe", "clock",
         "appearance", "google", "backup", "errlog", "health", "tests", "bin", "details", "about")
     "TASKS" -> key in setOf("t-groups", "t-add", "t-cal")
     // v2.04 (N35): each Shop-mode tab owns its settings, like Tasks/Learn/Calls in Task mode.
@@ -2478,4 +2478,215 @@ fun purgePreInstall(calls: List<CallReminder>, fenceMs: Long): Pair<List<CallRem
     }
     val keep = calls - purged.toSet()
     return keep to purged
+}
+
+// ================================================================ v2.10 (N9) permissions, asked in context
+
+/**
+ * Where a runtime permission stands. NOT_ASKED and BLOCKED both read "not granted" from the OS —
+ * only our own record ([asked]) tells them apart, which is why the record exists.
+ */
+enum class PermState { GRANTED, NOT_ASKED, DENIED, BLOCKED }
+
+/** What tapping "Allow" should do next. */
+enum class PermAction { NONE, PRE_PROMPT, SYSTEM_DIALOG, OPEN_SETTINGS }
+
+/**
+ * One row per runtime permission group — DECLARED ONCE (standing rule, like ITEM_ALARM_TYPES):
+ * the pre-prompt, the feature notes, Settings → Permissions and the manifest gate test all read this.
+ * [permissions] are the manifest names requested together; [checkPermissions] must all be granted.
+ * [minSdk]: below it the permission does not exist and counts as granted.
+ */
+data class PermInfo(
+    val key: String,
+    val title: String,
+    val enables: String,
+    val withoutIt: String,
+    val permissions: List<String>,
+    val checkPermissions: List<String> = permissions,
+    val minSdk: Int = 1
+)
+
+object PermKeys {
+    const val NOTIFICATIONS = "NOTIFICATIONS"
+    const val CALL_LOG = "CALL_LOG"
+    const val CONTACTS = "CONTACTS"
+    const val SAVE_CONTACT = "SAVE_CONTACT"
+    const val LOCATION = "LOCATION"
+    const val BG_LOCATION = "BG_LOCATION"
+    const val CALENDAR = "CALENDAR"
+}
+
+private const val P = "android.permission."
+
+val RUNTIME_PERMISSIONS: List<PermInfo> = listOf(
+    PermInfo(PermKeys.NOTIFICATIONS, "Notifications",
+        "Shows your reminders, alarms and call-backs on screen.",
+        "Nothing can appear on screen: alarms may still sound, but no card or notification shows what they are for.",
+        listOf(P + "POST_NOTIFICATIONS"), minSdk = 33),
+    PermInfo(PermKeys.CALL_LOG, "Call log & phone state",
+        "Notices a missed call the moment it ends and adds a call-back reminder; clears it once you talk.",
+        "The Calls tab still works — add call-backs by hand. Missed calls are not detected automatically.",
+        listOf(P + "READ_CALL_LOG", P + "READ_PHONE_STATE")),
+    PermInfo(PermKeys.CONTACTS, "Contacts (read)",
+        "Shows the caller's name instead of the number on call-backs.",
+        "Call-backs show the phone number instead of a name.",
+        listOf(P + "READ_CONTACTS")),
+    PermInfo(PermKeys.SAVE_CONTACT, "Contacts (save)",
+        "Lets \"Save contact\" add an unknown caller to your phone's contacts.",
+        "\"Save contact\" is unavailable; everything else works.",
+        listOf(P + "WRITE_CONTACTS")),
+    PermInfo(PermKeys.LOCATION, "Location",
+        "Places and shop geofences: your shop list alerts you when you arrive or leave.",
+        "Geofence alerts are off. Shop lists, shops and products work as normal.",
+        listOf(P + "ACCESS_FINE_LOCATION", P + "ACCESS_COARSE_LOCATION"),
+        checkPermissions = listOf(P + "ACCESS_FINE_LOCATION")),
+    PermInfo(PermKeys.BG_LOCATION, "Location — all the time",
+        "Lets geofence alerts fire while Remindly is closed (Android calls this \"Allow all the time\").",
+        "Geofence alerts only fire while Remindly is open.",
+        listOf(P + "ACCESS_BACKGROUND_LOCATION"), minSdk = 29),
+    PermInfo(PermKeys.CALENDAR, "Calendar",
+        "Shows your calendar events among Tasks and, if you turn it on, writes reminders into a calendar.",
+        "Calendar reading and calendar sync are off; nothing else changes.",
+        listOf(P + "READ_CALENDAR", P + "WRITE_CALENDAR"),
+        checkPermissions = listOf(P + "READ_CALENDAR"))
+)
+
+fun permInfo(key: String): PermInfo = RUNTIME_PERMISSIONS.first { it.key == key }
+
+/** The permissions to request on this SDK (drops ones that do not exist yet). */
+fun permsToRequest(info: PermInfo, sdk: Int): List<String> = if (sdk < info.minSdk) emptyList() else info.permissions
+
+/**
+ * The resolver. [granted] from the OS; [asked] = we have shown the system dialog before (or it was
+ * granted at some point); [canAskAgain] = Android's shouldShowRequestPermissionRationale.
+ * After a refusal Android may stop showing the dialog at all — then only system settings can grant.
+ */
+fun resolvePermState(granted: Boolean, asked: Boolean, canAskAgain: Boolean): PermState = when {
+    granted -> PermState.GRANTED
+    !asked -> PermState.NOT_ASKED
+    canAskAgain -> PermState.DENIED
+    else -> PermState.BLOCKED
+}
+
+/**
+ * N9 ⚑2: the pre-prompt (the WHY) is shown once, before the first system dialog. A permission
+ * Android will no longer ask for goes to system settings instead of a button that silently does nothing.
+ */
+fun permAction(state: PermState, prePromptSeen: Boolean): PermAction = when (state) {
+    PermState.GRANTED -> PermAction.NONE
+    PermState.BLOCKED -> PermAction.OPEN_SETTINGS
+    PermState.NOT_ASKED -> if (prePromptSeen) PermAction.SYSTEM_DIALOG else PermAction.PRE_PROMPT
+    PermState.DENIED -> PermAction.SYSTEM_DIALOG
+}
+
+fun permStateLabel(state: PermState): String = when (state) {
+    PermState.GRANTED -> "Allowed"
+    PermState.NOT_ASKED -> "Not asked yet"
+    PermState.DENIED -> "Off"
+    PermState.BLOCKED -> "Off — change in Android settings"
+}
+
+fun permButtonLabel(state: PermState): String? = when (state) {
+    PermState.GRANTED -> null
+    PermState.BLOCKED -> "Open settings"
+    else -> "Allow"
+}
+
+// ---- feature availability, per permission state (what each screen tells the user) ----
+
+enum class CallDetect { AUTO, MANUAL_ONLY }
+fun callDetectMode(callLog: PermState): CallDetect = if (callLog == PermState.GRANTED) CallDetect.AUTO else CallDetect.MANUAL_ONLY
+
+/** Calls tab: the full intro card only before the user has ever decided; afterwards a one-line note. */
+fun callsIntroVisible(callLog: PermState, prePromptSeen: Boolean): Boolean = callLog == PermState.NOT_ASKED && !prePromptSeen
+fun callsNoteVisible(callLog: PermState, prePromptSeen: Boolean): Boolean =
+    callLog != PermState.GRANTED && !callsIntroVisible(callLog, prePromptSeen)
+
+fun callNamesShown(contacts: PermState): Boolean = contacts == PermState.GRANTED
+
+enum class GeoMode { ALWAYS, WHILE_OPEN, OFF }
+fun geofenceMode(location: PermState, background: PermState, sdk: Int): GeoMode = when {
+    location != PermState.GRANTED -> GeoMode.OFF
+    sdk < 29 || background == PermState.GRANTED -> GeoMode.ALWAYS
+    else -> GeoMode.WHILE_OPEN
+}
+
+fun geofenceNote(mode: GeoMode): String? = when (mode) {
+    GeoMode.ALWAYS -> null
+    GeoMode.WHILE_OPEN -> "Geofence alerts only fire while Remindly is open — choose \"Allow all the time\" to get them in your pocket."
+    GeoMode.OFF -> "Geofence alerts are off — location access isn't allowed. Shop lists work as normal."
+}
+
+fun remindersVisible(notifications: PermState, sdk: Int): Boolean = sdk < 33 || notifications == PermState.GRANTED
+
+/**
+ * N9 ⚑ one state with N2: a never-asked permission gets the pre-prompt, never the degrade banner —
+ * the banner is for something the user once allowed (or refused) and is now off.
+ */
+fun permDegradeVisible(state: PermState): Boolean = state == PermState.DENIED || state == PermState.BLOCKED
+
+// ================================================================ v2.10 (N6 pt2) pure extractions — tests call these
+
+/**
+ * The list pipeline behind BOTH the header count and the rendered list (v1.79 Q11). Extracted from
+ * ListScreens.scopeOf so the test runs the real filter, not a copy.
+ */
+fun listScope(tabItems: List<Item>, tab: Tab, doneFlag: Boolean, personalFilter: Boolean,
+              searchOpen: Boolean, searchQ: String): List<Item> = tabItems
+    .filter { it.deletedAt == null }
+    .filter { it.done == doneFlag }
+    .let { list -> if (tab == Tab.SHOP) list.filter { it.personal == personalFilter } else list }
+    .let { list ->
+        val q = searchQ.trim().lowercase()
+        if (!searchOpen || q.isEmpty()) list else list.filter { it0 ->
+            listOfNotNull(it0.title, it0.notes, it0.group, it0.topic, it0.shopName, it0.platform)
+                .any { f -> f.lowercase().contains(q) }
+        }
+    }
+
+enum class Rearm { DUE, LAPSE }
+
+/** What rescheduleAll re-arms for an item (v1.79 Q12: soft-deleted items are never re-armed). */
+fun rearmKind(item: Item, now: Long): Rearm? = when {
+    item.deletedAt != null -> null
+    !item.done -> Rearm.DUE
+    item.returnAt != null && item.returnAt > now -> Rearm.LAPSE
+    else -> null
+}
+
+/** When an item's due alarm fires (v1.80 Q17: a live snooze wins; v2.8 N44: muted arms nothing). */
+fun itemFireAt(item: Item, now: Long): Long? =
+    if (item.done || item.deletedAt != null || isMuted(item)) null
+    else liveSnooze(item.snoozedUntil, now) ?: item.dueAt
+
+/** Bulk clear (v1.79 Q14): repeating items survive unless the user ticks "also delete repeating". */
+fun bulkClearTargets(items: List<Item>, alsoRepeats: Boolean): List<Item> =
+    if (alsoRepeats) items else items.filter { it.repeatMode == "OFF" }
+
+/** wa.me number (v1.79 N4): a bare 10-digit local number gets the configured country code. */
+fun waDigits(number: String, cc: String): String {
+    val digits = number.filter { it.isDigit() }
+    val code = cc.filter { it.isDigit() }.ifBlank { "91" }
+    return if (digits.length == 10) "$code$digits" else digits
+}
+
+/** One-time v1.81 (Q18) migration: an accidental stored 10-minute snooze becomes 90, once. */
+fun migrateSnooze90(s: AppSettings): AppSettings =
+    if (s.snoozeFixed90) s else s.copy(snoozeM1 = if (s.snoozeM1 == 10) 90 else s.snoozeM1, snoozeFixed90 = true)
+
+/** v1.81 (Q15): per-item request code for the notification tap, so taps never overwrite each other. */
+fun itemTapRequestCode(itemId: Long): Int = (8_500_000 + itemId).toInt()
+
+/**
+ * v1.70 (Q10) older-writer merge, extracted from Sync.mergeRecord (v2.10 N6 pt2): overlay ONLY the
+ * keys the remote actually carries onto the local record. Returns the merged record and the local
+ * fields that were kept because the remote lacked them.
+ */
+fun <T : Any> overlayOlderWriter(remoteJson: String, local: T, cls: Class<T>): Pair<T, List<String>> {
+    val base = com.google.gson.GsonBuilder().serializeNulls().create().toJsonTree(local).asJsonObject
+    val remote = com.google.gson.JsonParser.parseString(remoteJson).asJsonObject
+    val missing = base.entrySet().map { it.key }.filter { !remote.has(it) }
+    remote.entrySet().forEach { (k, v) -> base.add(k, v) }
+    return com.google.gson.Gson().fromJson(base, cls) to missing
 }

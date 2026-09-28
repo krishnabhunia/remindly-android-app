@@ -111,6 +111,32 @@ I11 ☐ Settings: master switch OFF hides the Shared icon and every group share 
       with a readable list.
 I12 ☐ Signed OUT: the share sheet and hub show the sign-in prompt, no crash.
 
+## X. PERMISSIONS OPTIONAL, ASKED IN CONTEXT (v2.10 N9) — run one phone as a CLEAN INSTALL
+
+X1 ☐ UPDATE 2.9 → 2.10 from Settings → Updates (the W3 path). EXPECT: data intact; anything you had
+      allowed before still shows "Allowed" in Settings → Permissions.
+X2 ☐ CLEAN INSTALL on a spare phone/profile. Only the notification question appears at launch.
+      DENY IT. EXPECT: no other permission dialog anywhere until you open the feature that needs it.
+X3 ☐ With NOTHING granted, use Tasks, Buy, Learn, Shops and Products fully (add, edit, complete,
+      group menu, share). EXPECT: all work; the only banner is the notifications one.
+X4 ☐ Open Calls. EXPECT: the intro card with "Allow access" and "Not now". Tap Not now → the card
+      becomes one line "Auto-detection is off — add call-backs with +" with Enable. Add a call-back
+      by hand with + → works.
+X5 ☐ Tap Enable → Android's dialog → Deny. Tap Enable again → Deny again. Tap Enable a third time.
+      EXPECT: no dead tap — a sheet says Android won't ask again and "Open Android settings" opens
+      Remindly's page there.
+X6 ☐ Grant call log from Android settings, come back. EXPECT: the note disappears; the contacts
+      explanation appears once (names instead of numbers).
+X7 ☐ Shops: give a shop a geofence with location OFF. EXPECT: the note "Geofence alerts are off …" with
+      Allow on the Shops page and inside the shop editor. Allow → "While using the app" only.
+      EXPECT: the note changes to "only fire while Remindly is open" with "Allow all the time".
+X8 ☐ Settings → Permissions. EXPECT: every row shows the TRUE state (Allowed / Not asked yet / Off /
+      Off — change in Android settings), matching Android's own app-permission page.
+X9 ☐ Error Logs. EXPECT: a "PERM … refused" line for each refusal in X2–X7 and "granted" lines for grants.
+X10 ☐ ⚑ Notifications denied (from X2): set a 1-minute Alarm item. Record what actually happens:
+      sound yes/no, card yes/no. (Android normally hides the full-screen card when notifications are
+      off. The permission text says "alarms may still sound" — confirm or correct it.)
+
 ## W. IN-APP UPDATES + SHOPPING-LIST FEATURES (v2.9 N47+N45)
 
 W1. INSTALL 2.9 from the GitHub release (or the repo's releases/ folder) over 2.8: data intact.

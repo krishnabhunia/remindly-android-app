@@ -110,19 +110,24 @@ fun CallPage(isDone: Boolean, onSwitchDone: (Boolean) -> Unit, onOpenSettings: (
     var showAdd by remember { mutableStateOf(false) }
     var clearTarget by remember { mutableStateOf<Pair<String, List<CallReminder>>?>(null) }
 
-    val hasPerms = CallEngine.hasCallLog(context) && CallEngine.hasPhoneState(context)
-    var permsAsked by remember { mutableStateOf(false) }
-    val permLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { result ->
-        permsAsked = true
-        if (result[Manifest.permission.READ_CALL_LOG] == true) {
-            // v2.6.2 (N41): the watermark is anchored the moment the engine first runs and the
-            // window is 5 minutes, so this can only ever pick up a call from the last few minutes —
-            // never history. (Before N41 this call could ingest the whole log on some OEMs.)
+    // v2.10 (N9): permissions asked in context, explained, and optional. The intro card below IS
+    // the pre-prompt for call log; after the user decides it shrinks to a one-line note.
+    val resumeTick = rememberResumeTick()
+    val ui by UiStore.s.collectAsState()
+    val callState = remember(resumeTick, ui.permAsked) { Perms.state(context, PermKeys.CALL_LOG) }
+    val callPrompted = PermKeys.CALL_LOG in ui.permPrompted
+    val contactsReq = rememberPermRequest(PermKeys.CONTACTS)
+    val callLogReq = rememberPermRequest(PermKeys.CALL_LOG) { ok ->
+        // v2.6.2 (N41): the watermark is anchored the moment the engine first runs and the
+        // window is 5 minutes, so this can only ever pick up a call from the last few minutes —
+        // never history. (Before N41 this call could ingest the whole log on some OEMs.)
+        if (ok) {
             CallEngine.process(context)
+            // names are the natural next question — asked once, with its own reason
+            if (Perms.state(context, PermKeys.CONTACTS) == PermState.NOT_ASKED) contactsReq()
         }
     }
+    fun allowCallLog() { Perms.markPrompted(PermKeys.CALL_LOG); callLogReq() }
 
     var labelFilter by remember { mutableStateOf<String?>(null) }
     val labelsInUse = all.filter { it.deletedAt == null }.mapNotNull { it.label?.takeIf { l -> l.isNotBlank() } }.distinct().sorted()
@@ -188,12 +193,7 @@ fun CallPage(isDone: Boolean, onSwitchDone: (Boolean) -> Unit, onOpenSettings: (
                         if (CallEngine.hasCallLog(context)) {
                             CallEngine.process(context)
                             Ack.show("Call log scanned — see Error Logs for details") {}
-                        } else {
-                            permLauncher.launch(arrayOf(
-                                Manifest.permission.READ_CALL_LOG,
-                                Manifest.permission.READ_PHONE_STATE
-                            ))
-                        }
+                        } else allowCallLog()
                     }) {
                         Icon(Icons.Filled.Refresh, "Scan call log now", tint = Color.White)
                     }
@@ -206,23 +206,21 @@ fun CallPage(isDone: Boolean, onSwitchDone: (Boolean) -> Unit, onOpenSettings: (
                 },
                 bottomContent = {
                     Column {
-                        // v1.52: surface a missing/auto-revoked permission instead of failing silently.
-                        if (!CallEngine.hasCallLog(context)) {
+                        // v1.52 → v2.10 (N9): after the user has decided, a one-line note replaces the card —
+                        // the tab stays fully usable for manual call-backs.
+                        if (callsNoteVisible(callState, callPrompted)) {
                             Row(
                                 Modifier.fillMaxWidth().padding(bottom = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    "Call log access is off — missed calls can't be detected.",
+                                    "Auto-detection is off — add call-backs with +.",
                                     style = MaterialTheme.typography.labelSmall, color = Color.White,
                                     modifier = Modifier.weight(1f)
                                 )
-                                TextButton(onClick = {
-                                    permLauncher.launch(arrayOf(
-                                        Manifest.permission.READ_CALL_LOG,
-                                        Manifest.permission.READ_PHONE_STATE
-                                    ))
-                                }) { Text("Allow", color = Color.White, fontWeight = FontWeight.Bold) }
+                                TextButton(onClick = { allowCallLog() }) {
+                                    Text(if (callState == PermState.BLOCKED) "Settings" else "Enable", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                         if (searchOpen) {
@@ -247,7 +245,7 @@ fun CallPage(isDone: Boolean, onSwitchDone: (Boolean) -> Unit, onOpenSettings: (
                 }
             )
 
-            if (!hasPerms) {
+            if (callsIntroVisible(callState, callPrompted)) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -263,24 +261,27 @@ fun CallPage(isDone: Boolean, onSwitchDone: (Boolean) -> Unit, onOpenSettings: (
                             color = pal.onChip
                         )
                         Text(
-                            "Remindly needs call log + phone state access to add reminders for truly missed calls and clear them when you talk (≥10 s). Contacts access shows names instead of numbers. Everything stays on your phone.",
+                            permInfo(PermKeys.CALL_LOG).enables + " Everything stays on your phone.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = pal.onChip,
                             modifier = Modifier.padding(top = 4.dp)
                         )
-                        Button(
-                            onClick = {
-                                permLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.READ_CALL_LOG,
-                                        Manifest.permission.READ_PHONE_STATE,
-                                        Manifest.permission.READ_CONTACTS
-                                    )
-                                )
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = pal.accent),
-                            modifier = Modifier.padding(top = 10.dp)
-                        ) { Text("Allow access", color = Color.White, fontWeight = FontWeight.Bold) }
+                        Text(
+                            "Optional. " + permInfo(PermKeys.CALL_LOG).withoutIt,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = pal.onChip,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Button(
+                                onClick = { allowCallLog() },
+                                colors = ButtonDefaults.buttonColors(containerColor = pal.accent)
+                            ) { Text("Allow access", color = Color.White, fontWeight = FontWeight.Bold) }
+                            TextButton(onClick = {
+                                Perms.markPrompted(PermKeys.CALL_LOG)
+                                runCatching { Logger.e(context, "PERM", null, "CALL_LOG declined on the Calls intro card — manual entry only") }
+                            }) { Text("Not now", color = pal.onChip, fontWeight = FontWeight.SemiBold) }
+                        }
                     }
                 }
             }
@@ -759,17 +760,11 @@ private fun CallCard(r: CallReminder, pal: TabPalette, isDoneList: Boolean, modi
                 saveFor = null
             } else Ack.show("Could not save — check the name") {}
         }
-        val savePermLauncher = rememberLauncherForActivityResult(
-            androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-        ) { ok ->
-            if (ok) persist() else Ack.show("Contacts permission denied") {}
+        // v2.10 (N9): explained first; a refusal leaves the sheet usable and says why nothing was saved.
+        val saveReq = rememberPermRequest(PermKeys.SAVE_CONTACT) { ok ->
+            if (ok) persist() else Ack.show("Not saved — Remindly isn't allowed to add contacts (Settings → Permissions)") {}
         }
-        fun doSave() {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(
-                    context, android.Manifest.permission.WRITE_CONTACTS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) persist() else savePermLauncher.launch(android.Manifest.permission.WRITE_CONTACTS)
-        }
+        fun doSave() = saveReq()
         // v1.28 item 2: Save Contact now uses the same white bottom sheet as the edit popup.
         ModalBottomSheet(onDismissRequest = { saveFor = null }, sheetState = sheetState, containerColor = SurfaceCard, windowInsets = sheetWindowInsets()) {
             Column(

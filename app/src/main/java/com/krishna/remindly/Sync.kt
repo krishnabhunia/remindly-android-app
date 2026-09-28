@@ -122,16 +122,14 @@ object SyncRepo {
         if (local == null || remoteVer >= SYNC_SCHEMA) {
             probe
         } else {
-            val base = syncGson.toJsonTree(local).asJsonObject
-            val remote = com.google.gson.JsonParser.parseString(raw).asJsonObject
-            val missing = base.entrySet().map { it.key }.filter { !remote.has(it) }
-            remote.entrySet().forEach { (k, v) -> base.add(k, v) }
+            // v2.10 (N6 pt2): the pure overlayOlderWriter() — V170Test calls the same function.
+            val (merged, missing) = overlayOlderWriter(raw, local, cls)
             if (missing.isNotEmpty()) Logger.e(
                 context, "SYNC", null,
                 "${cls.simpleName} from older sync schema v$remoteVer \u2014 kept local " +
                     "${missing.size} field(s): ${missing.joinToString(",")}"
             )
-            gson.fromJson(base, cls)
+            merged
         }
     }.getOrElse { Logger.e(context, "SYNC", it, "merge ${cls.simpleName} failed \u2014 record skipped"); null }
 

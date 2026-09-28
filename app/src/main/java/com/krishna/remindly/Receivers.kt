@@ -63,7 +63,7 @@ object Alerts {
      * notification on a tab overwrite each other's extras and every tap would open the last one.
      */
     internal fun mainIntentForItem(context: Context, item: Item): PendingIntent = PendingIntent.getActivity(
-        context, (8_500_000 + item.id).toInt(),
+        context, itemTapRequestCode(item.id),
         Intent(context, MainActivity::class.java)
             .putExtra("openTab", item.tab.ordinal)
             .putExtra("openItemId", item.id)

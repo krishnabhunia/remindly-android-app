@@ -94,11 +94,8 @@ object AlarmScheduler {
      */
     fun scheduleForItem(context: Context, item: Item) {
         // v2.8 (N44): a muted item (alert deleted) arms nothing — not even on reboot.
-        if (!item.done && item.deletedAt == null && !isMuted(item)) {
-            (liveSnooze(item.snoozedUntil) ?: item.dueAt)?.let {
-                scheduleAt(context, it, TYPE_DUE, item.id)
-            }
-        }
+        // v2.10 (N6 pt2): the decision is the pure itemFireAt() — the test calls the same function.
+        itemFireAt(item, System.currentTimeMillis())?.let { scheduleAt(context, it, TYPE_DUE, item.id) }
     }
 
     fun scheduleLapseReturn(context: Context, item: Item) {
@@ -173,11 +170,11 @@ object AlarmScheduler {
             // v1.79 (Q12): a soft-deleted item keeps done=false, so without this guard boot and
             // app-start re-armed alarms for things the user had already deleted — Engine.delete
             // cancels at delete time, but rescheduleAll put them straight back.
-            if (item.deletedAt != null) continue
-            if (!item.done) {
-                scheduleForItem(context, item)
-            } else if (item.returnAt != null && item.returnAt > now) {
-                scheduleLapseReturn(context, item)
+            // v2.10 (N6 pt2): the decision is the pure rearmKind().
+            when (rearmKind(item, now)) {
+                Rearm.DUE -> scheduleForItem(context, item)
+                Rearm.LAPSE -> scheduleLapseReturn(context, item)
+                null -> Unit
             }
         }
     }

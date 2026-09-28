@@ -790,9 +790,7 @@ object CallActions {
     // v1.79 (N4): the country code is a setting, not a hardcoded 91. A number already carrying a
     // code is left alone; only a bare local number gets one prepended.
     fun waNumber(number: String, cc: String = SettingsStore.s.value.defaultCountryCode): String {
-        val digits = number.filter { it.isDigit() }
-        val code = cc.filter { it.isDigit() }.ifBlank { "91" }
-        return if (digits.length == 10) "$code$digits" else digits
+        return waDigits(number, cc)   // v2.10 (N6 pt2): pure, tested
     }
 
     /** v1.79 (N4): [text] pre-fills the message; the user still taps send inside WhatsApp. */

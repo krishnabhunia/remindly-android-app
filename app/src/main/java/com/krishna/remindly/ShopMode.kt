@@ -158,6 +158,8 @@ fun ShopsScreen(onOpenGear: () -> Unit) {
         when (page) {
             PAGE_CITIES -> LazyColumn(Modifier.padding(horizontal = 12.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 10.dp, bottom = 96.dp)) {
                 item {
+                    // v2.10 (N9): a geofenced shop that can't alert says so here — with the fix.
+                    if (liveShops.any { it.hasGeofence }) GeofencePermNote(ShopPal.accent, Modifier.padding(bottom = 8.dp))
                     Button(onClick = { cityEditing = null; showCityEditor = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Filled.Add, null); Spacer(Modifier.width(6.dp)); Text("Add city")
                     }
@@ -552,6 +554,7 @@ fun ShopEditorSheet(existing: Shop?, presetCityId: Long?, onDismiss: () -> Unit,
                 // STANDING RULE (v2.02): the 13-stop scale, as a dropdown — never continuous.
                 Spacer(Modifier.height(6.dp))
                 RadiusDropdown(value = radius, accent = ShopPal.accent) { radius = it }
+                GeofencePermNote(ShopPal.accent, Modifier.padding(top = 8.dp))   // v2.10 (N9)
                 // v2.05 (N37): the arrival alert is only meaningful once a geofence exists.
                 Spacer(Modifier.height(10.dp))
                 Text("On arrival", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)

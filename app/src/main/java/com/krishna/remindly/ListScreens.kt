@@ -240,16 +240,8 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
     // v1.79 (Q11): the header used to count tabItems while the list applied two further filters,
     // so "1 active" could sit above an empty screen. Header and list are now two projections of
     // ONE pipeline — any filter added later is picked up by both automatically.
-    fun scopeOf(doneFlag: Boolean): List<Item> = tabItems
-        .filter { it.done == doneFlag }
-        .let { list -> if (tab == Tab.SHOP) list.filter { it.personal == personalFilter } else list }
-        .let { list ->
-            val q = searchQ.trim().lowercase()
-            if (!searchOpen || q.isEmpty()) list else list.filter { it0 ->
-                listOfNotNull(it0.title, it0.notes, it0.group, it0.topic, it0.shopName, it0.platform)
-                    .any { f -> f.lowercase().contains(q) }
-            }
-        }
+    // v2.10 (N6 pt2): the pipeline is the pure listScope() so its test runs the real filter.
+    fun scopeOf(doneFlag: Boolean): List<Item> = listScope(tabItems, tab, doneFlag, personalFilter, searchOpen, searchQ)
     // v2.05 (N38): Buy Now = ACTIVE, narrowed to the armed shop (pure buyNowItems).
     val visible = if (view == ListView.BUY_NOW && buyNowShop != null)
         scopeOf(false).let { active -> buyNowItems(active, buyNowShop) }
@@ -1000,7 +992,7 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
             onCheckedChange = if (repeats.isEmpty()) null else ({ v: Boolean -> alsoRepeats = v }),
             confirmEnabled = willDelete > 0,
             onConfirm = {
-                val doomed = if (alsoRepeats) itemsToClear else itemsToClear.filter { it.repeatMode == "OFF" }
+                val doomed = bulkClearTargets(itemsToClear, alsoRepeats)   // v2.10 (N6 pt2): pure, tested
                 if (alsoRepeats && repeats.isNotEmpty()) Logger.e(
                     context, "DELETE", null,
                     "bulk clear of \"$label\" ended ${repeats.size} repeating item(s)"
@@ -2606,22 +2598,19 @@ fun LocationsSheet(pal: TabPalette, onDismiss: () -> Unit) {
     var status by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
 
-    val bgLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        Geofencer.registerAll(context)
+    // v2.10 (N9): location, then "all the time" — each with its own reason, each optional.
+    val resumeTick = rememberResumeTick()
+    val ui by UiStore.s.collectAsState()
+    val geoMode = remember(resumeTick, ui.permAsked) {
+        geofenceMode(Perms.state(context, PermKeys.LOCATION), Perms.state(context, PermKeys.BG_LOCATION), Build.VERSION.SDK_INT)
     }
-    val fineLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
-        val fineOk = res[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        if (fineOk && Build.VERSION.SDK_INT >= 29 && !Geofencer.hasBackgroundLocation(context)) {
-            bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
+    val bgReq = rememberPermRequest(PermKeys.BG_LOCATION) { Geofencer.registerAll(context) }
+    val locReq = rememberPermRequest(PermKeys.LOCATION) { ok ->
+        if (ok && Build.VERSION.SDK_INT >= 29 && !Geofencer.hasBackgroundLocation(context)) bgReq()
         Geofencer.registerAll(context)
     }
 
-    fun requestLocationPerms() {
-        fineLauncher.launch(
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-        )
-    }
+    fun requestLocationPerms() = locReq()
 
     val pm = context.getSystemService(PowerManager::class.java)
     val batteryOk = pm?.isIgnoringBatteryOptimizations(context.packageName) == true
@@ -2652,26 +2641,9 @@ fun LocationsSheet(pal: TabPalette, onDismiss: () -> Unit) {
                 color = InkSubtle
             )
 
-            if (!Geofencer.hasFineLocation(context) || !Geofencer.hasBackgroundLocation(context)) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = LearnSoft),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(
-                            "Location access needed",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                        Text(
-                            "Pick \"Allow all the time\" so reminders can fire even when the app is closed.",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        TextButton(onClick = { requestLocationPerms() }) {
-                            Text("Allow location", color = pal.accent, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
+            geofenceNote(geoMode)?.let { note ->
+                PermNote(note, if (geoMode == GeoMode.OFF) "Allow" else "Allow all the time", pal.accent,
+                    onAction = { if (geoMode == GeoMode.OFF) requestLocationPerms() else bgReq() })
             }
 
             if (!batteryOk) {

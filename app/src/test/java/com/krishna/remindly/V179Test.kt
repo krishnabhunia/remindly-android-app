@@ -15,16 +15,11 @@ class V179Test {
 
     // ---------------- Q11: the header must describe exactly what the list renders ----------------
 
-    /** Mirrors ListScreens.scopeOf: one pipeline, two projections. */
+    /** v2.10 (N6 pt2): calls the PRODUCTION pipeline behind ListScreens.scopeOf — no copy. */
     private fun scope(all: List<Item>, doneFlag: Boolean, shop: Boolean,
-                      personalFilter: Boolean, query: String) = all
-        .filter { it.deletedAt == null }
-        .filter { it.done == doneFlag }
-        .let { l -> if (shop) l.filter { it.personal == personalFilter } else l }
-        .let { l ->
-            val q = query.trim().lowercase()
-            if (q.isEmpty()) l else l.filter { it.title.lowercase().contains(q) }
-        }
+                      personalFilter: Boolean, query: String) =
+        listScope(all.map { it.copy(tab = if (shop) Tab.SHOP else Tab.TASKS) }, if (shop) Tab.SHOP else Tab.TASKS,
+            doneFlag, personalFilter, searchOpen = query.isNotEmpty(), searchQ = query)
 
     @Test fun headerEqualsVisible_acrossEveryCombination() {
         val all = listOf(
@@ -60,10 +55,15 @@ class V179Test {
 
     // ---------------- Q12: rescheduleAll must skip soft-deleted items ----------------
 
-    /** Mirrors the guard added to AlarmScheduler.rescheduleAll. */
-    private fun wouldSchedule(items: List<Item>, now: Long) = items.filter { i ->
-        i.deletedAt == null && (!i.done || (i.returnAt != null && i.returnAt!! > now))
-    }.map { it.id }
+    /** v2.10 (N6 pt2): the production decision AlarmScheduler.rescheduleAll now uses. */
+    private fun wouldSchedule(items: List<Item>, now: Long) = items.filter { rearmKind(it, now) != null }.map { it.id }
+
+    @Test fun rearmKindDistinguishesDueFromLapse() {
+        assertEquals(Rearm.DUE, rearmKind(item(1, false), 1_000L))
+        assertEquals(Rearm.LAPSE, rearmKind(item(3, true).copy(returnAt = 2_000L), 1_000L))
+        assertEquals("a lapse already past is not re-armed", null, rearmKind(item(3, true).copy(returnAt = 500L), 1_000L))
+        assertEquals(null, rearmKind(item(2, false, deleted = 5L), 1_000L))
+    }
 
     @Test fun deletedItemsAreNotRearmed() {
         val now = 1_000L
@@ -78,8 +78,8 @@ class V179Test {
 
     // ---------------- Q14: bulk clear partitions on repeatMode ----------------
 
-    private fun doomed(group: List<Item>, alsoRepeats: Boolean) =
-        if (alsoRepeats) group else group.filter { it.repeatMode == "OFF" }
+    /** v2.10 (N6 pt2): production bulkClearTargets, used by the list's bulk clear. */
+    private fun doomed(group: List<Item>, alsoRepeats: Boolean) = bulkClearTargets(group, alsoRepeats)
 
     @Test fun allRecurringGroup_clearsNothingUntilTicked() {
         val g = listOf(item(1, true, repeat = "DAILY"), item(2, true, repeat = "WEEKLY"))
@@ -102,10 +102,14 @@ class V179Test {
 
     // ---------------- N4: WhatsApp number normalisation ----------------
 
-    private fun wa(number: String, cc: String = "91"): String {
-        val digits = number.filter { it.isDigit() }
-        val code = cc.filter { it.isDigit() }.ifBlank { "91" }
-        return if (digits.length == 10) "$code$digits" else digits
+    /** v2.10 (N6 pt2): production waDigits, which CallActions.waNumber delegates to. */
+    private fun wa(number: String, cc: String = "91"): String = waDigits(number, cc)
+
+    @Test fun searchFindsNotesAndGroupsNotJustTitles() {
+        // the old mirror searched titles only; production also searches notes/group/topic/shop/platform
+        val all = listOf(item(1, false).copy(notes = "buy milk"), item(2, false).copy(group = "Dairy"), item(3, false))
+        assertEquals(listOf(1L), scope(all, false, false, false, "milk").map { it.id })
+        assertEquals(listOf(2L), scope(all, false, false, false, "dairy").map { it.id })
     }
 
     @Test fun tenDigitGetsTheDefaultCode() = assertEquals("919876543210", wa("9876543210"))

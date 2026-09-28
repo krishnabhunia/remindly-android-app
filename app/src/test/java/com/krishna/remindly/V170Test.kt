@@ -10,18 +10,21 @@ import org.junit.Test
 /**
  * v1.70 Q10: an older writer must never narrow a record.
  *
- * These mirror the exact merge Sync.mergeRecord performs (overlay only the keys the remote
- * carries onto the local record) so the rule is pinned without needing Firestore.
+ * v2.10 (N6 pt2): these call overlayOlderWriter — the function Sync.mergeRecord itself uses —
+ * so the rule is pinned on production code without needing Firestore.
  */
 class V170Test {
 
     private val nulls = GsonBuilder().serializeNulls().create()
 
-    private fun <T : Any> merge(remoteJson: String, local: T, cls: Class<T>): T {
-        val base = nulls.toJsonTree(local).asJsonObject
-        val remote = JsonParser.parseString(remoteJson).asJsonObject
-        remote.entrySet().forEach { (k, v) -> base.add(k, v) }
-        return gson.fromJson(base, cls)
+    private fun <T : Any> merge(remoteJson: String, local: T, cls: Class<T>): T =
+        overlayOlderWriter(remoteJson, local, cls).first
+
+    @Test fun keptFieldsAreReported() {
+        val local = Item(id = 7, tab = Tab.TASKS, title = "x", alertType = "A")
+        val (_, kept) = overlayOlderWriter("""{"id":7,"tab":"TASKS","title":"y"}""", local, Item::class.java)
+        assertTrue("alertType was kept from the local record", "alertType" in kept)
+        assertTrue("title came from the remote", "title" !in kept)
     }
 
     // ---- the exact bug: iOS v1.52 has no alertType ----

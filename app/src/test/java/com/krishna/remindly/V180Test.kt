@@ -19,10 +19,11 @@ class V180Test {
         assertNull(liveSnooze(null, NOW))
     }
 
-    /** Mirrors the one change reboot, undo-done and reopen all inherit. */
-    private fun fireAt(item: Item, now: Long): Long? =
-        if (item.done || item.deletedAt != null) null
-        else liveSnooze(item.snoozedUntil, now) ?: item.dueAt
+    /** v2.10 (N6 pt2): the production decision AlarmScheduler.scheduleForItem uses — no copy. */
+    private fun fireAt(item: Item, now: Long): Long? = itemFireAt(item, now)
+
+    @Test fun mutedItemsAreNeverArmed() =
+        assertNull("v2.8 N44: a deleted alert arms nothing", fireAt(item(due = NOW + 200).copy(alertType = ALERT_MUTED), NOW))
 
     private fun item(due: Long? = null, snooze: Long? = null,
                      done: Boolean = false, deleted: Long? = null, repeat: String = "OFF") =

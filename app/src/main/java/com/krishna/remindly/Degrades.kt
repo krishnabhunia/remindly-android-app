@@ -82,7 +82,7 @@ object Degrades {
         EXACT_ALARM -> "Alarms may fire late — exact alarms are switched off for Remindly."
         BATTERY -> "Alarms may be delayed — battery optimisation is on for Remindly."
         CONTACTS -> "Missed calls will show numbers, not names — contacts access is off."
-        NOTIFS -> "Reminders can't be shown — notifications are blocked for Remindly."
+        NOTIFS -> "Notifications are off — reminders can't appear on screen (alarms may still sound)."
         SYNC -> "Cloud sync isn't running — the last attempt failed."
         CALENDAR -> "Calendar items aren't loading — the last read failed."
         else -> "Something is degraded — see Error Logs."
@@ -110,10 +110,10 @@ object Degrades {
         }.onFailure { Logger.e(context, "DEGRADE", it, "battery probe failed") }
 
         runCatching {
-            val ok = androidx.core.content.ContextCompat.checkSelfPermission(
-                context, android.Manifest.permission.READ_CONTACTS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            if (!ok) raise(context, CONTACTS, "READ_CONTACTS not granted") else clear(CONTACTS)
+            // v2.10 (N9) ⚑ one state with the pre-prompt: a permission never asked is the Calls
+            // tab's job to explain — the banner is only for one that was asked and is now off.
+            val st = Perms.state(context, PermKeys.CONTACTS)
+            if (permDegradeVisible(st)) raise(context, CONTACTS, "READ_CONTACTS $st") else clear(CONTACTS)
         }.onFailure { Logger.e(context, "DEGRADE", it, "contacts probe failed") }
 
         runCatching {
@@ -153,7 +153,8 @@ fun DegradeBanner(tab: Tab?, onOpenLogs: () -> Unit) {
                 color = InkPrimary
             )
             Text(
-                "Tap for details in Error Logs" + if (codes.size > 1) " · ${codes.size - 1} more" else "",
+                (if (code == Degrades.CONTACTS || code == Degrades.NOTIFS) "Change in Settings → Permissions" else "Tap for details in Error Logs") +
+                    if (codes.size > 1) " · ${codes.size - 1} more" else "",
                 style = MaterialTheme.typography.labelSmall,
                 color = InkSubtle
             )

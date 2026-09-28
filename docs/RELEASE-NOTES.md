@@ -1,4 +1,28 @@
-# Remindly 2.9 — 28-Sep-2026
+# Remindly 2.10 — 28-Sep-2026
+
+**Every permission is now optional, asked when you use it, and explained first.** Before Android's
+question appears, Remindly says what the permission is for and what still works if you say no.
+
+Saying no never leaves a dead screen: Calls works by hand, call-backs show numbers instead of names,
+and shop lists work without geofences.
+
+- **Settings → Permissions** (new): every permission, whether it is on, what it enables, and one
+  button to allow it. Special access (exact alarms, battery, installing updates) is listed too.
+- **When Android stops asking** after you have refused twice, the button now opens Remindly's page in
+  Android settings instead of doing nothing.
+- **Calls tab:** the intro card now has "Not now". After that it shrinks to one line — "Auto-detection
+  is off — add call-backs with +" — with Enable.
+- **Shops and Places:** a geofenced shop that can't alert says so, with "Allow" or "Allow all the time".
+- **Contacts, calendar, save contact:** the same explanation first. A refusal says why nothing happened.
+- Notifications are still asked at launch — a reminder app can't work without them.
+
+Under the hood: the remaining tests that copied production logic now call the real code, and three
+permanent checks guard permission handling and those tests. This is also the first release built,
+signed and published entirely by GitHub Actions.
+
+Source: https://github.com/krishnabhunia/remindly-android-app
+
+# Previous release — 2.9 — 28-Sep-2026
 
 **Updates now come through the app.** Remindly checks its GitHub repository once a day and tells
 you when a new version exists; Settings → Updates downloads it (Wi-Fi only by default), verifies

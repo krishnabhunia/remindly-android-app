@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -434,6 +435,8 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
                 }
             }
 
+            if (vis("permissions")) SettingsSection("Permissions", { Icon(Icons.Filled.Security, null, tint = sectionTint("alerts")) },
+                expanded = openKey == "permissions", onToggle = { toggleKey("permissions") }) { PermissionsSection() }   // v2.10 (N9)
             if (vis("updates")) SettingsSection("Updates", { Icon(Icons.Filled.SystemUpdate, null, tint = sectionTint("backup")) },
                 expanded = openKey == "updates", onToggle = { toggleKey("updates") }) { UpdatesSection() }
             if (vis("sched")) SettingsSection("Scheduled alerts", { Icon(Icons.Filled.Alarm, null, tint = sectionTint("alerts")) },
@@ -1449,11 +1452,11 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
             // -------------------------------------------------- calendar sync (v1.21 item 2)
             if (vis("t-cal")) SettingsSection("Calendar (Read-Only)", { Icon(Icons.Filled.EditCalendar, null, tint = SettingsAccent) },
                 expanded = openKey == "t-cal", onToggle = { toggleKey("t-cal") }) {
-                val calPermLauncher = rememberLauncherForActivityResult(
-                    androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
-                ) { grants ->
+                // v2.10 (N9): through the shared requester — explained once, and a blocked permission
+                // opens Android settings instead of a button that silently does nothing.
+                val calReq = rememberPermRequest(PermKeys.CALENDAR) { granted ->
                     // v1.46 Feature 4a: read-only — granting no longer switches on any writing.
-                    if (grants.values.any { it }) {
+                    if (granted) {
                         UiStore.update { u -> u.copy(savedNotice = listOf("Calendar access granted — choose a calendar to read from.")) }
                     } else {
                         UiStore.update { u -> u.copy(savedNotice = listOf("Calendar permission denied — the calendar view stays empty.")) }
@@ -1479,7 +1482,7 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
                     )
                     TextButton(onClick = {
                         if (CalSync.hasReadPerm(context)) { CalSync.migrateSelectionIfNeeded(context); showCalPick = true }
-                        else calPermLauncher.launch(arrayOf(android.Manifest.permission.READ_CALENDAR))
+                        else calReq()
                     }) { Text(if (acct != null) "Change" else "Choose") }
                 }
                 if (showCalPick) {
@@ -1747,10 +1750,7 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
                             if (CalSync.hasPerms(context)) {
                                 SettingsStore.update { it.copy(calendarSync = true) }
                                 CalSync.backfill(context)
-                            } else calPermLauncher.launch(arrayOf(
-                                android.Manifest.permission.READ_CALENDAR,
-                                android.Manifest.permission.WRITE_CALENDAR
-                            ))
+                            } else calReq()
                         } else {
                             CalSync.teardown(context)
                             SettingsStore.update { it.copy(calendarSync = false) }

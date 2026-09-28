@@ -14,10 +14,8 @@ class V181Test {
 
     @Test fun migrationFlagStartsUnset() = assertEquals(false, AppSettings().snoozeFixed90)
 
-    /** Mirrors the one-time migration in RemindlyApp. */
-    private fun migrate(s: AppSettings): AppSettings =
-        if (s.snoozeFixed90) s
-        else s.copy(snoozeM1 = if (s.snoozeM1 == 10) 90 else s.snoozeM1, snoozeFixed90 = true)
+    /** v2.10 (N6 pt2): the production migration RemindlyApp runs — no copy. */
+    private fun migrate(s: AppSettings): AppSettings = migrateSnooze90(s)
 
     @Test fun storedTenBecomesNinety() {
         // the exact state v1.80 left behind: the default was 10 and got persisted
@@ -76,7 +74,8 @@ class V181Test {
      * The subtle Q15 defect: with FLAG_UPDATE_CURRENT a shared request code lets every
      * notification on a tab overwrite each other's extras, so every tap opens the same item.
      */
-    private fun requestCode(id: Long) = (8_500_000 + id).toInt()
+    /** v2.10 (N6 pt2): the production code Receivers.mainIntentForItem passes to PendingIntent. */
+    private fun requestCode(id: Long) = itemTapRequestCode(id)
 
     @Test fun twoItemsGetDifferentRequestCodes() {
         assertNotEquals(requestCode(1L), requestCode(2L))

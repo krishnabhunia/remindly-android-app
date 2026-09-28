@@ -68,7 +68,7 @@ Any item that cannot honour the rule states WHY in its entry.
 
 ## WAITING QUEUE
 
-NEXT: N9 + N6pt2 (= release 2.10, next in the 'implement everything in queue' run), then N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), SPIKE-2 (PARKED — silent).
+NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), SPIKE-2 (PARKED — silent). N9 + N6pt2 SHIPPED as 2.10.
 
 ### INFRA — APK built on GitHub Actions — DONE 28-Sep-2026 (no app version change)
 ### Krishna 28-Sep-2026: "can you build the APK in GitHub action section?"
@@ -917,6 +917,45 @@ TO BUILD:
 before the fix is written. Building Q19 alone would repeat the pattern that caused it.
 
 ---
+
+## v2.10 — SHIPPED 28-Sep-2026 (versionCode 2010000, 571 debug tests green; release variant tested by the Action)
+
+### N9 (permissions optional, asked in context, explained) + N6 pt2 (mirrors removed)
+Trigger: Krishna, "release" (28-Sep-2026). Feature release → 2.9 → 2.10 / 2010000. First release built, signed
+and published by GitHub Actions (build-release.yml) — no APK committed to releases/.
+
+N9 AS BUILT (⚑ defaults 1–3 applied as queued):
+- Model.kt: PermState {GRANTED, NOT_ASKED, DENIED, BLOCKED}, resolvePermState(granted, asked, canAskAgain),
+  PermAction + permAction(state, prePromptSeen), RUNTIME_PERMISSIONS declared ONCE (7 rows: notifications, call
+  log, contacts read, contacts save, location, location all-the-time, calendar), feature resolvers callDetectMode,
+  callsIntroVisible/callsNoteVisible, callNamesShown, geofenceMode/geofenceNote, remindersVisible, permDegradeVisible.
+- Perms.kt: Perms (OS state, asked/prompted record in UiStore permAsked/permPrompted, syncGranted for upgrades,
+  onResult → Logger.e "PERM … refused/granted", openAppSettings); rememberPermRequest(key) — the ONE requester
+  (pre-prompt once → system dialog → blocked ⇒ "Open Android settings" sheet, never a silent no-op);
+  PermPrePromptSheet (SheetBottomSpace); PermNote; GeofencePermNote; PermissionsSection (Settings → Permissions,
+  + special access: exact alarms, battery, install updates).
+- Wired: Calls (intro card = the pre-prompt, + Not now → one-line note with Enable/Settings; contacts asked once after
+  call log is granted), Save contact, Places sheet (location then all-the-time), Shops page + shop editor notes,
+  Calendar (Settings), notifications (launch cadence unchanged, now recorded + logged).
+- One state with N2: Degrades CONTACTS banner only when DENIED/BLOCKED (never for NOT_ASKED); NOTIFS label corrected;
+  banner points to Settings → Permissions for both.
+- ⚑ HONEST CORRECTION to the queued spec: it said "notifications refused → alarms still fire the full-screen
+  card". On Android 13+ a blocked app's full-screen card is normally suppressed too; the text now says
+  "alarms may still sound" and device check X10 records what really happens.
+
+N6 pt2 AS BUILT: pure extractions used by production AND tests — listScope (ListScreens.scopeOf), bulkClearTargets,
+rearmKind + itemFireAt (AlarmScheduler), waDigits (CallActions.waNumber), migrateSnooze90 (RemindlyApp),
+itemTapRequestCode (Receivers), overlayOlderWriter (Sync.mergeRecord). V179/V180/V181/V170 rewritten to call them;
+new tests the mirrors could not express (search over notes/group, muted never armed, kept-fields reported).
+
+GATES (V210Test, 22 tests) — each SEEN TO FAIL by negative control before release:
+  1 itemFireAt ignoring muted → V180.mutedItemsAreNeverArmed failed
+  2 CALENDAR row removed → everyDangerousManifestPermissionIsInTheTable failed (READ/WRITE_CALENDAR)
+  3 a direct RequestPermission() in ShopMode.kt → noScreenRequestsAPermissionOnItsOwn failed
+  4 a "/** Mirrors" label in V132Test → noTestCarriesAMirrorOfProductionLogic failed
+  All restored → green. Also extractedFunctionsAreTheOnesProductionCalls pins each extraction to its call site.
+
+Device checklist: section X (X1–X10).
 
 ## v2.9 — SHIPPED 28-Sep-2026 (versionCode 2009000, 1090 tests green: 545 debug + 545 release)
 
