@@ -1,10 +1,10 @@
 {
-  "versionCode": 2008000,
-  "versionName": "2.8",
-  "apk": "Remindly-2.8.apk",
-  "apkUrl": "https://raw.githubusercontent.com/krishnabhunia/remindly-android-app/main/releases/Remindly-2.8.apk",
-  "sha256": "519458b9b9ab8b8ff419d3f127d4b8ee439833bbe05eb7996ae6d40973c7ac90",
-  "sizeBytes": 16347043,
-  "notes": "Delete from Scheduled alerts; every deletion cancels the full alarm set.",
+  "versionCode": 2009000,
+  "versionName": "2.9",
+  "apk": "Remindly-2.9.apk",
+  "apkUrl": "https://raw.githubusercontent.com/krishnabhunia/remindly-android-app/main/releases/Remindly-2.9.apk",
+  "sha256": "4c6257d1db6dd1d4a26edca95158c500ff89ba59f168ae5c3d3b29efbaa4bd79",
+  "sizeBytes": 16400685,
+  "notes": "In-app updates from GitHub; group icons and menu; product suggestions and mic on quick add; WhatsApp sharing; launch splash.",
   "publishedAt": "2026-09-28"
 }

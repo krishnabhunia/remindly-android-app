@@ -38,6 +38,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -341,6 +342,21 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
             if (vis("api-keys")) SettingsSection("API keys", { Icon(Icons.Filled.Lock, null, tint = sectionTint("errlog")) },
                 expanded = openKey == "api-keys", onToggle = { toggleKey("api-keys") }) { ApiKeysSection() }
 
+            if (vis("sharing")) SettingsSection("Sharing", { Icon(Icons.Filled.Share, null, tint = ShopPal.accent) },
+                expanded = openKey == "sharing", onToggle = { toggleKey("sharing") }) {
+                // v2.9 (N45): defaults for the group share sheet.
+                SettingRowSwitch("Include completed items", "Ticked items appear with (✓)", settings.shareIncludeDone) { on -> SettingsStore.update { it.copy(shareIncludeDone = on) } }
+                SettingRowSwitch("Include quantities & shop", "e.g. “Milk 2 L · D-Mart”", settings.shareIncludeQty) { on -> SettingsStore.update { it.copy(shareIncludeQty = on) } }
+                Text("Default group for new items", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+                Row(Modifier.padding(top = 4.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(selected = settings.shopDefaultGroup.isBlank(), onClick = { SettingsStore.update { it.copy(shopDefaultGroup = "") } }, label = { Text("None") })
+                    settings.shopGroups.forEach { g ->
+                        FilterChip(selected = settings.shopDefaultGroup == g, onClick = { SettingsStore.update { it.copy(shopDefaultGroup = g) } }, label = { Text((groupIconFor(g, settings)?.let { "$it " } ?: "") + g) })
+                    }
+                }
+                SettingRowSwitch("Voice input on quick add", "Mic button on the add bar", settings.shopVoiceAdd) { on -> SettingsStore.update { it.copy(shopVoiceAdd = on) } }
+                SettingRowSwitch("Suggestions from Products", "While typing an item", settings.shopSuggest) { on -> SettingsStore.update { it.copy(shopSuggest = on) } }
+            }
             if (vis("shop-buy")) SettingsSection("Buy list", { Icon(Icons.Filled.ShoppingCart, null, tint = ShopPal.accent) },
                 expanded = openKey == "shop-buy", onToggle = { toggleKey("shop-buy") }) {
                 SettingRowSwitch("Group by shop", "Buy items grouped under their shop", settings.shopSort == "SHOP") { on ->
@@ -418,6 +434,8 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
                 }
             }
 
+            if (vis("updates")) SettingsSection("Updates", { Icon(Icons.Filled.SystemUpdate, null, tint = sectionTint("backup")) },
+                expanded = openKey == "updates", onToggle = { toggleKey("updates") }) { UpdatesSection() }
             if (vis("sched")) SettingsSection("Scheduled alerts", { Icon(Icons.Filled.Alarm, null, tint = sectionTint("alerts")) },
                 expanded = openKey == "sched", onToggle = { toggleKey("sched") }) {
                 // v2.7 (N42): the one place that lists every armed alarm / ring / notification.
@@ -2548,6 +2566,64 @@ private fun ApiKeysSection() {
         },
         dismissButton = { TextButton(onClick = { stage = 0 }) { Text("Cancel") } }
     )
+}
+
+/**
+ * v2.9 (N47): Updates — installed vs latest, Check now, Update (download → verify → installer),
+ * the auto-check and Wi-Fi-only switches, and the one-time "install unknown apps" grant.
+ */
+@Composable
+private fun UpdatesSection() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val settings by SettingsStore.s.collectAsState()
+    val ui by UiStore.s.collectAsState()
+    var busy by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(-1) }
+    var status by remember { mutableStateOf<String?>(null) }
+    val installed = Updater.installedName(context)
+    val feed = remember(ui.updateFeedJson) { Updater.cachedFeed() }
+    val newer = feed != null && updateAvailable(feed, Updater.installedCode(context))
+
+    Text("Installed $installed" + (feed?.let { " · latest ${it.versionName}" } ?: ""), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+    Text(if (ui.updateLastCheck > 0L) "Last checked ${formatDateTime(ui.updateLastCheck)}" else "Not checked yet", style = MaterialTheme.typography.bodySmall, color = InkSubtle)
+    if (newer && feed != null) {
+        Text("Remindly ${feed.versionName} is available", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = SuccessGreen, modifier = Modifier.padding(top = 6.dp))
+        if (feed.notes.isNotBlank()) Text(feed.notes, style = MaterialTheme.typography.bodySmall, color = InkSubtle)
+        if (!Updater.canInstall(context)) {
+            Text("Android needs a one-time permission for Remindly to install its own updates.", style = MaterialTheme.typography.bodySmall, color = AmberInk, modifier = Modifier.padding(top = 4.dp))
+            OutlinedButton(onClick = { Updater.openInstallPermission(context) }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(50.dp)) { Text("Allow installing updates") }
+        }
+        Button(enabled = !busy, onClick = {
+            busy = true; progress = 0; status = null
+            scope.launch {
+                val r = Updater.downloadAndInstall(context, feed) { p -> progress = p }
+                busy = false
+                status = when (r) {
+                    is Updater.Result.Ok -> "Downloaded and verified — confirm the install on the system dialog."
+                    is Updater.Result.Blocked -> r.reason
+                    is Updater.Result.Failed -> r.reason
+                }
+            }
+        }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(50.dp)) {
+            Text(if (busy) "Downloading… ${progress.coerceAtLeast(0)}%" else "Update to ${feed.versionName} (${if (feed.sizeBytes > 0) "${feed.sizeBytes / 1_048_576} MB" else "APK"})", fontWeight = FontWeight.Bold)
+        }
+        if (busy && progress >= 0) LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+    } else if (feed != null) {
+        Text("You have the latest version.", style = MaterialTheme.typography.bodyMedium, color = SuccessGreen, modifier = Modifier.padding(top = 6.dp))
+    }
+    status?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = InkSubtle, modifier = Modifier.padding(top = 4.dp)) }
+    OutlinedButton(enabled = !busy, onClick = {
+        busy = true; status = null
+        scope.launch {
+            val f = Updater.check(context, notify = false)
+            busy = false
+            status = if (f == null) "Couldn't reach the update feed — check your connection." else null
+        }
+    }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(50.dp)) { Text("Check now") }
+    SettingRowSwitch("Check automatically", "Once a day, quietly; a notification when a new version exists", settings.updateAutoCheck) { on -> SettingsStore.update { it.copy(updateAutoCheck = on) } }
+    SettingRowSwitch("Download on Wi-Fi only", "Mobile data is never used for the APK", settings.updateWifiOnly) { on -> SettingsStore.update { it.copy(updateWifiOnly = on) } }
+    TextButton(onClick = { Updater.openReleasesPage(context) }) { Text("Open the releases page") }
 }
 
 /** v2.01 (N32): the house label+subtitle+Switch row (mirrors the badges row) for the shop-mode sections. */

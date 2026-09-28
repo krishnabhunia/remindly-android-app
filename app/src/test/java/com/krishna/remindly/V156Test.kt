@@ -42,7 +42,7 @@ class V156Test {
 
     @Test fun schema_is_30_and_defaults_are_safe() {
         val s = AppSettings()
-        assertEquals(41, s.ver)   // v1.90: two-mode + shop entities
+        assertEquals(42, s.ver)   // v1.90: two-mode + shop entities
         assertEquals(7, s.alarmRingSeconds)     // v1.68: 7 s default, hard 3 s–3 min band
         assertTrue(s.alertsEnabled)
     }

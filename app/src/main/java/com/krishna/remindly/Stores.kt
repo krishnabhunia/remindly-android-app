@@ -604,6 +604,8 @@ object SettingsStore {
         if (out.ver < 40) out = out.copy(ver = 40)
         // v2.8 (N44): ALERT_MUTED item state — no settings field, ver stamp only.
         if (out.ver < 41) out = out.copy(ver = 41)
+        // v2.9 (N47/N45): updater + shopping-list settings — pure defaults, healed.
+        if (out.ver < 42) out = out.copy(ver = 42)
         // v1.48: calendar window unit/months + Shop.area + discrete radius — defaults only.
         return out
     }

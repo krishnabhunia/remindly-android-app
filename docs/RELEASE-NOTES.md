@@ -1,4 +1,19 @@
-# Remindly 2.8 — 12-Sep-2026
+# Remindly 2.9 — 28-Sep-2026
+
+**Updates now come through the app.** Remindly checks its GitHub repository once a day and tells
+you when a new version exists; Settings → Updates downloads it (Wi-Fi only by default), verifies
+it, and hands it to Android's installer — one tap, data kept. The first time, Android asks you to
+allow Remindly to install updates.
+
+**Shopping-list features** (from your reference screens): an icon per group, a long-press group
+menu (Rename · Change icon · Share · Duplicate · Complete all · Delete list), product suggestions
+and a mic on quick add, a category chip on linked items, WhatsApp / Copy sharing with text
+options, defaults in Buy ⚙ → Sharing, and a launch splash. Dark mode was already in the app
+(Settings → Appearance → Theme).
+
+Source: https://github.com/krishnabhunia/remindly-android-app
+
+# Previous release — 2.8 — 12-Sep-2026
 
 **Scheduled alerts can now be deleted.** On the Scheduled alerts page, each row's menu (or a swipe
 to the left) offers:

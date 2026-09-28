@@ -427,11 +427,11 @@ fun sheetClearanceDp(windowHeightDp: Float, navBottomDp: Float, imeVisible: Bool
  */
 fun settingsSectionVisible(filterKey: String?, key: String): Boolean = when (filterKey) {
     // v2.04 (N36): "shop-mode" (Start in) is gone — the ☰ drawer owns the mode, always last used.
-    null -> key in setOf("maps", "api-keys", "alerts", "adding", "done", "lists", "sched", "gestures", "swipe", "clock",
+    null -> key in setOf("updates", "maps", "api-keys", "alerts", "adding", "done", "lists", "sched", "gestures", "swipe", "clock",
         "appearance", "google", "backup", "errlog", "health", "tests", "bin", "details", "about")
     "TASKS" -> key in setOf("t-groups", "t-add", "t-cal")
     // v2.04 (N35): each Shop-mode tab owns its settings, like Tasks/Learn/Calls in Task mode.
-    "BUY" -> key in setOf("shop-buy", "s-groups", "s-add", "pin")
+    "BUY" -> key in setOf("shop-buy", "s-groups", "s-add", "pin", "sharing")
     "SHOPS" -> key in setOf("shop-geo", "location")
     "PRODUCTS" -> key in setOf("shop-data")
     "SHOP" -> key in setOf("shop-buy", "s-groups", "s-add", "pin")   // legacy key = the Buy page
@@ -720,6 +720,63 @@ fun rowsForRecord(rows: List<SchedRow>, row: SchedRow): List<SchedRow> = rows.fi
     (row.placeId != null && it.placeId == row.placeId)
 }
 
+// ---------------------------------------------------------------- v2.9 (N47) in-app updates
+
+const val UPDATE_FEED_URL = "https://raw.githubusercontent.com/krishnabhunia/remindly-android-app/main/releases/version.json"
+const val UPDATE_RELEASES_URL = "https://github.com/krishnabhunia/remindly-android-app/releases/latest"
+const val UPDATE_CHECK_INTERVAL_MS = 24L * 3600_000L
+
+/** The feed the app reads: releases/version.json in the repo (published with every release). */
+data class VersionFeed(val versionCode: Int, val versionName: String, val apk: String, val apkUrl: String,
+                       val sha256: String, val sizeBytes: Long, val notes: String)
+
+/** Strict parse — any missing or malformed field returns null (the updater then stays quiet). */
+fun parseVersionFeed(json: String): VersionFeed? = runCatching {
+    // Gson, not org.json: the same parser runs in unit tests (org.json is an Android stub there).
+    val o = com.google.gson.JsonParser.parseString(json).asJsonObject
+    fun str(k: String): String? = o.get(k)?.takeIf { it.isJsonPrimitive }?.asString?.trim()
+    val code = o.get("versionCode")?.takeIf { it.isJsonPrimitive }?.asInt ?: return null
+    val name = str("versionName") ?: return null
+    val apk = str("apk") ?: return null; val url = str("apkUrl") ?: return null
+    val sha = (str("sha256") ?: return null).lowercase()
+    if (code <= 0 || name.isEmpty() || !apk.endsWith(".apk") || !url.startsWith("https://") || sha.length != 64) return null
+    VersionFeed(code, name, apk, url, sha, o.get("sizeBytes")?.takeIf { it.isJsonPrimitive }?.asLong ?: 0L, str("notes") ?: "")
+}.getOrNull()
+
+/** Newer only — never "downgrade", never re-offer the installed build. */
+fun updateAvailable(feed: VersionFeed?, installedCode: Int): Boolean = feed != null && feed.versionCode > installedCode
+
+fun updateCheckDue(lastCheckMs: Long, now: Long, autoCheck: Boolean): Boolean =
+    autoCheck && now - lastCheckMs >= UPDATE_CHECK_INTERVAL_MS
+
+fun sha256Hex(bytes: ByteArray): String =
+    java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+// ---------------------------------------------------------------- v2.9 (N45) shopping-list helpers
+
+/** Product suggestions while typing: prefix matches first, then contains; case-insensitive; max [limit]. */
+fun productSuggestions(query: String, products: List<Product>, limit: Int = 6): List<Product> {
+    val q = query.trim().lowercase(); if (q.length < 2) return emptyList()
+    val live = products.filter { it.deletedAt == null }
+    val starts = live.filter { it.name.lowercase().startsWith(q) }
+    val contains = live.filter { !it.name.lowercase().startsWith(q) && (it.name.lowercase().contains(q) || (it.category ?: "").lowercase().contains(q)) }
+    return (starts.sortedBy { it.name.lowercase() } + contains.sortedBy { it.name.lowercase() }).take(limit)
+}
+
+/** The share text for a group, honouring the two toggles. */
+fun groupShareText(title: String, items: List<Item>, includeDone: Boolean, includeQty: Boolean): String {
+    val rows = items.filter { it.deletedAt == null && (includeDone || !it.done) }
+    val sb = StringBuilder("Shopping list – $title\n")
+    rows.forEach { i ->
+        val qty = if (includeQty && !i.quantity.isNullOrBlank()) " ${i.quantity}" else ""
+        val shop = if (includeQty && !i.shopName.isNullOrBlank()) " · ${i.shopName}" else ""
+        sb.append("- ${i.title}$qty$shop${if (i.done) " (✓)" else ""}\n")
+    }
+    return sb.toString().trimEnd()
+}
+
+fun groupIconFor(name: String, s: AppSettings): String? = s.groupIcons[name]?.takeIf { it.isNotBlank() }
+
 // ---------------------------------------------------------------- v2.6.1 (N39) navigation contract
 
 /** Where a navigation request wants to land. A gear page is an OVERLAY, never a destination. */
@@ -889,7 +946,18 @@ data class CallReminder(
 }
 
 data class AppSettings(
-    val ver: Int = 41,
+    val ver: Int = 42,
+    // v2.9 (N47): in-app updates from the GitHub repo's releases/version.json feed.
+    val updateAutoCheck: Boolean = true,
+    val updateWifiOnly: Boolean = true,
+    // v2.9 (N45): shopping-list features — group icons (emoji per group name), default group for
+    // quick add, voice input, product suggestions, share defaults.
+    val groupIcons: Map<String, String> = emptyMap(),
+    val shopDefaultGroup: String = "",
+    val shopVoiceAdd: Boolean = true,
+    val shopSuggest: Boolean = true,
+    val shareIncludeDone: Boolean = false,
+    val shareIncludeQty: Boolean = true,
     // v2.7 (N43): checkbox on every group header — global switch + per-tab INHERIT/ON/OFF.
     val groupHeaderCheck: Boolean = true,
     val tasksGroupCheck: String = "INHERIT",
@@ -1972,6 +2040,8 @@ fun healSettings(a: AppSettings): AppSettings = a.copy(
     shopArriveTypes = normalizeAlertTypes(a.shopArriveTypes) ?: "N",
     // v2.7 (N43): per-tab group-check overrides — null Strings on pre-40 JSON would break copy().
     tasksGroupCheck = a.tasksGroupCheck ?: "INHERIT",
+    groupIcons = a.groupIcons ?: emptyMap(),           // v2.9: null Map on pre-42 JSON
+    shopDefaultGroup = a.shopDefaultGroup ?: "",
     learnGroupCheck = a.learnGroupCheck ?: "INHERIT",
     shopGroupCheck = a.shopGroupCheck ?: "INHERIT",
     shopArriveCooldownMin = if (a.shopArriveCooldownMin >= 0) a.shopArriveCooldownMin else 10,

@@ -69,6 +69,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -136,6 +137,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.border
 import androidx.compose.material3.Checkbox
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Mic
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.LocationServices
@@ -185,6 +187,27 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
     // Quick add bar (always visible on Active pages since v1.4)
     var quickText by remember { mutableStateOf("") }
     val quickDup = dupActiveMatch(ItemStore.items.value, tab, quickText)
+    // v2.9 (N45): a product picked from the suggestions rides along into the new item.
+    var quickProduct by remember { mutableStateOf<Product?>(null) }
+    val products by ProductStore.products.collectAsState()
+    val quickSuggestions = remember(quickText, products, settings.shopSuggest) {
+        if (tab == Tab.SHOP && settings.shopSuggest && quickProduct == null) productSuggestions(quickText, products) else emptyList()
+    }
+    // v2.9 (N45): speech-to-text into the quick-add field (system recogniser; no library).
+    val voiceLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { res ->
+        runCatching {
+            val spoken = res.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
+            if (!spoken.isNullOrBlank()) quickText = spoken
+        }.onFailure { Logger.e(context, "VOICE", it, "speech result parse failed") }
+    }
+    fun startVoice() {
+        runCatching {
+            val i = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                .putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Say the item")
+            voiceLauncher.launch(i)
+        }.onFailure { Logger.e(context, "VOICE", it, "no speech recogniser on this phone"); Feedback.toast(context, "Voice input isn't available on this phone") }
+    }
     val quickFocus = remember { FocusRequester() }
     val kb = LocalSoftwareKeyboardController.current
     val fm = LocalFocusManager.current
@@ -263,6 +286,8 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
     var clearTarget by remember { mutableStateOf<Pair<String, List<Item>>?>(null) }
     // v2.7 (N43): group-header checkbox — pending bulk action (label, items) and the Undo batch.
     var bulkTarget by remember { mutableStateOf<Pair<String, List<Item>>?>(null) }
+    // v2.9 (N45): long-press a group header → Rename · Change icon · Share · Duplicate · Delete list.
+    var groupMenu by remember { mutableStateOf<Pair<String, List<Item>>?>(null) }
     var undoBatch by remember { mutableStateOf<List<Item>?>(null) }
     val groupCheckOn = groupCheckFor(tab, settings)
     fun headerCheck(items: List<Item>): GroupCheckState? =
@@ -310,10 +335,13 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
                 // v1.47 Feature 2c: date-only when the tab/global setting says "no due time".
                 dueAt = due, dueHasTime = due != null && newDueTimedFor(tab, settings),
                 priority = Priority.MEDIUM,
-                personal = tab == Tab.SHOP && personalFilter
+                personal = tab == Tab.SHOP && personalFilter,
+                // v2.9 (N45): default group for new Buy items + the linked product when picked.
+                group = if (tab == Tab.SHOP && settings.shopDefaultGroup.isNotBlank()) settings.shopDefaultGroup else null,
+                productId = quickProduct?.id
             )
         )
-        quickText = ""
+        quickText = ""; quickProduct = null
     }
 
     Box(
@@ -570,13 +598,16 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
                         item(key = gKey) {
                             Box(Modifier.animateItemPlacement()) {
                                 MonthHeader(
+                                    // v2.9 (N45): the group's emoji icon leads the label
+                                    (if (sortMode == "GROUP") groupIconFor(gLabel, settings)?.let { "$it " } ?: "" else "") +
                                     gLabel + (if (tab == Tab.SHOP) spendLabel(gItems) else if (tab == Tab.LEARN) hoursLabel(gItems) else ""),
                                     gItems.size, gKey in collapsedMonths, pal,
                                     onToggle = { collapsedMonths = toggle(collapsedMonths, gKey) },
                                     onClear = if (isDone && settings.showDeleteOnDone) ({ clearTarget = gLabel to gItems }) else null,
                                     // v1.87 (N17): active Tasks/Shop groups can be shared as a list.
                                     onShare = if (shareOk && !isDone) ({ shareGroup = gLabel to gItems }) else null,
-                                    check = headerCheck(gItems), onCheck = headerTap(gLabel, gItems)   // v2.7 (N43)
+                                    check = headerCheck(gItems), onCheck = headerTap(gLabel, gItems),   // v2.7 (N43)
+                                    onLongPress = if (sortMode == "GROUP" && !isDone) ({ groupMenu = gLabel to gItems }) else null   // v2.9 (N45)
                                 )
                             }
                         }
@@ -751,12 +782,28 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, capitalization = KeyboardCapitalization.Words),
                                 keyboardActions = KeyboardActions(onDone = { quickAddNow() })
                             )
+                            if (tab == Tab.SHOP && settings.shopVoiceAdd) IconButton(onClick = { startVoice() }) {
+                                Icon(Icons.Filled.Mic, "Speak the item", tint = pal.accent)   // v2.9 (N45)
+                            }
                             IconButton(onClick = {
                                 // v1.4: ✕ only hides the keyboard — the draft stays untouched.
                                 kb?.hide()
                                 fm.clearFocus()
                             }) {
                                 Icon(Icons.Filled.Close, "Hide keyboard", tint = GreyIcon)
+                            }
+                        }
+                        // v2.9 (N45): suggestions from the Products database while typing.
+                        if (quickSuggestions.isNotEmpty()) Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            quickSuggestions.forEach { p ->
+                                AssistChip(
+                                    onClick = { quickText = p.name; quickProduct = p },
+                                    label = { Text(p.name + (p.category?.let { " · $it" } ?: "")) },
+                                    leadingIcon = { Icon(Icons.Filled.Add, null, tint = pal.accent, modifier = Modifier.size(16.dp)) }
+                                )
                             }
                         }
                     }
@@ -890,6 +937,7 @@ fun ListPage(tab: Tab, isDone: Boolean, onSwitchDone: (Boolean) -> Unit,
         TripSheet(pal, personalFilter) { showTrip = false }
     }
     // v2.7 (N43): bulk complete / restore from a group header — standard sheet chrome, one Undo.
+    groupMenu?.let { (gName, gItems) -> GroupMenuSheet(tab, gName, gItems, pal, onShare = { shareGroup = gName to gItems }, onCompleteAll = { bulkTarget = gName to gItems }) { groupMenu = null } }
     bulkTarget?.let { (label, items) ->
         val ids = bulkTargets(items, isDone)
         val targets = items.filter { it.id in ids }
@@ -3057,5 +3105,82 @@ fun TripSheet(pal: TabPalette, personal: Boolean, onDismiss: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = { showFinish = false }) { Text("Back") } }
         )
+    }
+}
+
+
+/**
+ * v2.9 (N45): the group ("list") options menu — Rename (across every item in the group and the
+ * settings list), Change icon (emoji), Share, Duplicate (copies the items into "<name> copy"),
+ * Complete all (N43), Delete list (items → Bin, name removed). Standard sheet chrome.
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun GroupMenuSheet(tab: Tab, name: String, items: List<Item>, pal: TabPalette, onShare: () -> Unit, onCompleteAll: () -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val settings by SettingsStore.s.collectAsState()
+    var mode by remember { mutableStateOf("menu") }
+    var text by remember { mutableStateOf(name) }
+    val icons = listOf("🛒", "🏠", "💊", "🎁", "🧹", "🍎", "👕", "📚", "🔧", "🐾", "🎉", "✈️", "💼", "🍼", "🧴", "⭐")
+    fun setGroups(edit: (List<String>) -> List<String>) = SettingsStore.update {
+        when (tab) { Tab.SHOP -> it.copy(shopGroups = edit(it.shopGroups)); Tab.TASKS -> it.copy(tasksGroups = edit(it.tasksGroups)); Tab.LEARN -> it }
+    }
+    EditorSheet(title = (groupIconFor(name, settings)?.let { "$it " } ?: "") + name, accent = pal.accent, onDismiss = onDismiss, actions = {
+        if (mode == "rename") EditorActionRow(accent = pal.accent, onCancel = { mode = "menu" }, saveEnabled = text.isNotBlank() && text.trim() != name, saveLabel = "Rename", onSave = {
+            val nn = text.trim()
+            runCatching {
+                items.forEach { i -> ItemStore.upsert(i.copy(group = nn)) }
+                setGroups { g -> g.map { if (it == name) nn else it }.distinct() }
+                SettingsStore.update { it.copy(groupIcons = it.groupIcons - name + (it.groupIcons[name]?.let { ic -> nn to ic }?.let { mapOf(it) } ?: emptyMap()), shopDefaultGroup = if (it.shopDefaultGroup == name) nn else it.shopDefaultGroup) }
+                Logger.e(context, "GROUP", null, "renamed '$name' → '$nn' (${items.size} items)")
+            }.onFailure { Logger.e(context, "GROUP", it, "rename failed") }
+            onDismiss()
+        })
+        else if (mode == "delete") EditorActionRow(accent = OverdueRed, onCancel = { mode = "menu" }, saveLabel = "Delete list (${items.size})", onSave = {
+            runCatching {
+                items.forEach { Engine.delete(context, it) }
+                setGroups { g -> g.filter { it != name } }
+                SettingsStore.update { it.copy(groupIcons = it.groupIcons - name, shopDefaultGroup = if (it.shopDefaultGroup == name) "" else it.shopDefaultGroup) }
+                Logger.e(context, "GROUP", null, "deleted list '$name' (${items.size} items → Bin)")
+                Feedback.toast(context, "“$name” deleted · items are in the Bin")
+            }.onFailure { Logger.e(context, "GROUP", it, "delete list failed") }
+            onDismiss()
+        })
+        else EditorActionRow(accent = pal.accent, onCancel = onDismiss, saveEnabled = false, saveLabel = "", onSave = {})
+    }) {
+        when (mode) {
+            "rename" -> OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true, label = { Text("List name") }, modifier = Modifier.fillMaxWidth())
+            "icon" -> {
+                Text("Pick an icon", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    icons.forEach { ic ->
+                        FilterChip(selected = groupIconFor(name, settings) == ic, onClick = {
+                            SettingsStore.update { it.copy(groupIcons = it.groupIcons + (name to ic)) }; mode = "menu"
+                        }, label = { Text(ic, style = MaterialTheme.typography.titleMedium) })
+                    }
+                    FilterChip(selected = groupIconFor(name, settings) == null, onClick = { SettingsStore.update { it.copy(groupIcons = it.groupIcons - name) }; mode = "menu" }, label = { Text("None") })
+                }
+            }
+            "delete" -> Text("${items.size} item${if (items.size == 1) "" else "s"} go to the Bin (restorable). The list name is removed.", style = MaterialTheme.typography.bodyMedium)
+            else -> Column {
+                Text("${items.size} items · ${items.count { it.done }} done", style = MaterialTheme.typography.bodySmall, color = InkSubtle)
+                TextButton(onClick = { text = name; mode = "rename" }) { Text("✏️  Rename") }
+                TextButton(onClick = { mode = "icon" }) { Text("🎨  Change icon") }
+                TextButton(onClick = { onDismiss(); onShare() }) { Text("📤  Share list") }
+                TextButton(onClick = {
+                    val nn = "$name copy"
+                    runCatching {
+                        items.filter { it.deletedAt == null }.forEach { i -> ItemStore.upsert(i.copy(id = Ids.next(), group = nn, done = false, doneAt = null, snoozedUntil = null)) }
+                        setGroups { g -> if (nn in g) g else g + nn }
+                        groupIconFor(name, settings)?.let { ic -> SettingsStore.update { it.copy(groupIcons = it.groupIcons + (nn to ic)) } }
+                        Logger.e(context, "GROUP", null, "duplicated '$name' → '$nn' (${items.size} items)")
+                        Feedback.toast(context, "Duplicated as “$nn”")
+                    }.onFailure { Logger.e(context, "GROUP", it, "duplicate failed") }
+                    onDismiss()
+                }) { Text("📑  Duplicate list") }
+                TextButton(onClick = { onDismiss(); onCompleteAll() }) { Text("☑  Complete all") }
+                TextButton(onClick = { mode = "delete" }) { Text("🗑  Delete list", color = OverdueRed) }
+            }
+        }
     }
 }

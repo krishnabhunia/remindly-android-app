@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.content.Intent
 import android.os.Bundle
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.BackHandler
@@ -127,6 +128,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()   // v2.9 (N45): must precede super.onCreate
         super.onCreate(savedInstanceState)
         Stores.init(this)
         SystemBars.install(this)   // v2.01 (N32): real nav-bar/IME geometry for every bottom sheet
@@ -280,6 +282,8 @@ fun MainScaffold(initialTab: Int) {
             .onFailure { Logger.e(context, "MODE", it, "mode restore failed — keeping last mode") }
     }
     LaunchedEffect(selectedShopTab) { UiStore.update { it.copy(lastShopTab = selectedShopTab) } }
+    // v2.9 (N47): quiet update check once a day (notification only when a newer build exists).
+    LaunchedEffect(Unit) { Updater.checkIfDue(context) }
     // v2.7 (N42): Settings → "Open scheduled alerts" hands over to the gear host.
     val schedOpen by SchedNav.open.collectAsState()
     LaunchedEffect(schedOpen) { if (schedOpen) { SchedNav.open.value = false; openGear("SCHED") } }

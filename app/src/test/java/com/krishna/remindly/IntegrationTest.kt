@@ -134,7 +134,7 @@ class IntegrationTest {
         // stage B: through the store
         SettingsStore.load()
         val s = SettingsStore.s.value
-        assertEquals(41, s.ver)
+        assertEquals(42, s.ver)
         assertEquals(-1, s.tasksMoveDelaySec)
         assertEquals(7, s.shopMoveDelaySec)
         assertEquals(3, delayFor(s, Tab.TASKS))
@@ -163,7 +163,7 @@ class IntegrationTest {
     @Test
     fun v111_settingsMigration_seedsSortFromBooleans() {
         val m = SettingsStore.migrate(AppSettings(ver = 10, shopGroupByGroup = true, tasksGroupByGroup = false))
-        assertEquals(41, m.ver)
+        assertEquals(42, m.ver)
         assertEquals("GROUP", m.shopSort)
         assertEquals("DATE", m.tasksSort)
     }

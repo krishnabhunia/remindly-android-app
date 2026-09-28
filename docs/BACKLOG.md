@@ -68,9 +68,10 @@ Any item that cannot honour the rule states WHY in its entry.
 
 ## WAITING QUEUE
 
-NEXT: N45 (design stage — awaiting approval + trigger). Remaining after it: N46 (shared editing epic, design later), N29, SPIKE-2 (PARKED — silent), N9, SPIKE-1, N6pt2.
+NEXT: N9 + N6pt2 (= release 2.10, next in the 'implement everything in queue' run), then N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), SPIKE-2 (PARKED — silent).
 
-### N45 — Krishna 28-Sep-2026: "incorporate the features in the screenshot" (an 8-screen shopping-list
+### N45 — SHIPPED as v2.9 (28-Sep-2026) — queued entry kept below
+### (was) Krishna 28-Sep-2026: "incorporate the features in the screenshot" (an 8-screen shopping-list
 ### reference: splash, lists, items, add+suggest, share, list menu, settings, dark) — queued at design
 ### stage (design/n45-shopping-list-features-design-v1.html)
 MAPPING RULE: no parallel "lists" entity — the reference's Lists ARE Remindly's Groups (Buy list grouped
@@ -901,6 +902,71 @@ TO BUILD:
 before the fix is written. Building Q19 alone would repeat the pattern that caused it.
 
 ---
+
+## v2.9 — SHIPPED 28-Sep-2026 (versionCode 2009000, 1090 tests green: 545 debug + 545 release)
+
+### N47 (in-app updates from GitHub) + N45 (shopping-list features) — SHIPPED; first release delivered
+### through the repo krishnabhunia/remindly-android-app
+Trigger: Krishna, "push" then "release" (28-Sep-2026) on "implement everything in queue and release in
+GitHub". Feature release → 2.8 → 2.9 / 2009000. Schema 41 → 42.
+
+GITHUB (new standing setup):
+  • Repo krishnabhunia/remindly-android-app (public). NEVER committed: remindly.keystore,
+    keystore.properties, local.properties (Key A), app/google-services.json, build output. The
+    signing password that had been HARD-CODED in build.gradle.kts is now read from git-ignored
+    keystore.properties (or REMINDLY_* env vars); without it the build is unsigned. Verified by
+    grep on the committed tree (keys/passwords: none).
+  • Release mechanics: this session's GitHub proxy blocks tag pushes and Release creation, so each
+    release COMMITS releases/<apk> + releases/version.json to main; a secret-free Action
+    (.github/workflows/publish-release.yml) mirrors that into a tagged GitHub Release. v2.8 and v2.9
+    published this way. The old ci/ folder (which expected the keystore in the repo) is removed.
+  • version.json = {versionCode, versionName, apk, apkUrl (raw.githubusercontent), sha256,
+    sizeBytes, notes, publishedAt} — the app's update feed.
+N47 — IN-APP UPDATES: Updater.kt — check (once/24 h on app start when enabled, and "Check now"):
+  GET the raw feed → parseVersionFeed (Gson; strict: https only, .apk, 64-hex sha, code > 0) →
+  updateAvailable = strictly newer than the installed versionCode (never re-offers, never
+  downgrades) → notification "Remindly X is available". Update: download to cacheDir/updates
+  (streaming, progress), SHA-256 verified against the feed BEFORE anything runs (mismatch → file
+  deleted, logged, refused), then the system installer via FileProvider (${applicationId}.updates)
+  + REQUEST_INSTALL_PACKAGES; canRequestPackageInstalls gate with a button to the one-time
+  "install unknown apps" screen. Settings → "Updates" (first on the General page): installed vs
+  latest, last checked, Update button with progress, Check now, auto-check switch, Wi-Fi-only
+  switch (mobile data never used for the APK), releases-page link. Honest limit (stated): Android
+  cannot install silently — the final step is one tap on the system dialog. Same signing key →
+  in-place update, data kept.
+N45 — SHOPPING-LIST FEATURES (their "lists" = our Groups; no new entity):
+  • Group icon: AppSettings.groupIcons (name → emoji); shown before the group label when sorting
+    by group; picked from a 16-emoji grid (or None).
+  • Group options menu: LONG-PRESS a group header (MonthHeader gained onLongPress via
+    combinedClickable) → GroupMenuSheet: Rename (renames every item + the settings list + icon +
+    default group), Change icon, Share list, Duplicate list (copies live items into "<name> copy",
+    un-done), Complete all (N43), Delete list (items → Bin, name removed) — standard sheet chrome.
+  • Add + suggestions: quick-add on Buy shows AssistChips from productSuggestions(query, Products)
+    (prefix first, then contains, name or category, ≥ 2 chars, max 6); picking one links productId;
+    new Buy items take shopDefaultGroup. Mic button (RecognizerIntent free-form) fills the field;
+    a phone without a recogniser gets a toast, never a crash.
+  • Category chip: a Buy item linked to a product shows its category as a MetaChip.
+  • Share: the existing ShareListSheet gained WhatsApp direct (setPackage com.whatsapp; falls back
+    to the system sheet if absent), Share…, Copy, and the two toggles (include completed / include
+    quantities & shop) with defaults in Buy ⚙ → Sharing; groupShareText() builds the text.
+  • Settings: Buy ⚙ → "Sharing" section (toggles, default group chips, voice, suggestions).
+  • Splash: androidx.core:core-splashscreen — Theme.Remindly.Splash (brand colour + launcher icon)
+    on the launcher activity, installSplashScreen() before super.onCreate.
+  • DARK MODE: already implemented since v1.69 (Palette.kt composable getters, LocalAppDark,
+    Theme setting) — verified, nothing to build; the design's item 8 was a false gap. Recorded so it
+    is not "re-done".
+  • N46 (shared editing / invite link) deliberately NOT done — needs server infrastructure.
+COMPANIONS: (1) every network/voice/share/group path runCatching-guarded with a user-visible
+  fallback; (2) Logger.e "UPDATE" (feed result, verify, install), "VOICE", "SHARE" (target +
+  fallback), "GROUP" (rename/duplicate/delete with counts); (3) tests — V29Test 10 (feed parser
+  accepts the real shape and rejects six unsafe shapes, newer-only compare, 24 h cadence + disabled,
+  SHA-256 known vectors, suggestion ranking/cap/category, share text under both toggles, icon lookup
+  + heals of all seven new fields, section table, schema 42); 16 suites' pins 41→42. Suite 1090
+  green (545 + 545) XML-verified. Reds on the way: FilterChip import + FlowRow OptIn + splash import
+  (compile); parseVersionFeed used org.json (an Android stub in JVM tests) → switched to Gson.
+DEVICE-ONLY (honest): section W — the whole update flow on the phone (2.9 → next release), mic,
+  WhatsApp, group menu, splash.
+
 
 ## v2.8 — SHIPPED 12-Sep-2026 (versionCode 2008000, 1070 tests green: 535 debug + 535 release)
 

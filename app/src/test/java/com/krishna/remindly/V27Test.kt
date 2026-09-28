@@ -152,7 +152,7 @@ class V27Test {
     }
 
     @Test fun v27_schemaIs40_andHealCoatsOverrides() {
-        assertEquals(41, AppSettings().ver)
+        assertEquals(42, AppSettings().ver)
         val legacy = com.google.gson.Gson().fromJson("{\"ver\":39}", AppSettings::class.java)
         val h = healSettings(legacy)
         assertEquals("INHERIT", h.tasksGroupCheck); assertEquals("INHERIT", h.shopGroupCheck)

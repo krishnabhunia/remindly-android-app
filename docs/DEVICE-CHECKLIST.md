@@ -111,6 +111,28 @@ I11 ☐ Settings: master switch OFF hides the Shared icon and every group share 
       with a readable list.
 I12 ☐ Signed OUT: the share sheet and hub show the sign-in prompt, no crash.
 
+## W. IN-APP UPDATES + SHOPPING-LIST FEATURES (v2.9 N47+N45)
+
+W1. INSTALL 2.9 from the GitHub release (or the repo's releases/ folder) over 2.8: data intact.
+W2. UPDATES SECTION — Settings → Updates shows "Installed 2.9 · latest 2.9" after Check now, and
+    "You have the latest version." No notification.
+W3. NEXT RELEASE (2.10) — within a day of it being published: a notification "Remindly 2.10 is
+    available"; Settings → Updates shows the Update button with the size. Tap → first time Android
+    opens "install unknown apps" for Remindly (allow) → tap Update again → progress to 100% → the
+    system installer dialog → Install → the app reopens as 2.10 with everything intact.
+W4. WI-FI ONLY — on mobile data with the switch on, Update says why it did not download.
+W5. TAMPER CHECK (optional) — Error Logs after an update shows "downloaded + verified"; a wrong
+    SHA would show "SHA-256 mismatch — download discarded".
+W6. GROUP MENU — Buy list sorted by group: long-press a group header → Rename / Change icon /
+    Share / Duplicate / Complete all / Delete list; Rename renames every item; the icon shows in
+    the header; Duplicate creates "<name> copy"; Delete sends the items to the Bin.
+W7. SUGGESTIONS + MIC — type 2+ letters of a product in quick add: chips appear; picking one adds
+    the item linked to the product (its category chip shows on the card). The mic fills the field
+    from speech.
+W8. SHARE — group → Share list → WhatsApp opens with the text; Copy copies; the two toggles change
+    the text; Buy ⚙ → Sharing sets the defaults and the default group for new items.
+W9. SPLASH — cold start shows the brand-colour splash with the icon, then the app.
+
 ## U. DELETE FROM SCHEDULED ALERTS (v2.8 N44)
 
 U1. MENU — Settings → Scheduled alerts → Open → ⋮ on an item row: two red entries — "Delete this

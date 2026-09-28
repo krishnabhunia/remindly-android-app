@@ -33,7 +33,7 @@ class V146Test {
     @Test fun migration_clears_stale_sync_flag() {
         val old = AppSettings(ver = 23, calendarSync = true, calendarTargetId = 42L)
         val m = SettingsStore.migrate(old)
-        assertEquals(41, m.ver)
+        assertEquals(42, m.ver)
         assertFalse("stale 'sync on' must be cleared", m.calendarSync)
     }
 

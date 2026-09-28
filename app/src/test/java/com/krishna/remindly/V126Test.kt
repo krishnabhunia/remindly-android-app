@@ -68,11 +68,11 @@ class V126Test {
     // ---------------- item 5: schema ----------------
 
     @Test fun schema_default_is_18() {
-        assertEquals(41, AppSettings().ver)   // v2.04 schema
+        assertEquals(42, AppSettings().ver)   // v2.04 schema
     }
 
     @Test fun migrate_lifts_old_settings_to_18() {
-        assertEquals(41, SettingsStore.migrate(AppSettings(ver = 17)).ver)
-        assertEquals(41, SettingsStore.migrate(AppSettings(ver = 17)).ver)
+        assertEquals(42, SettingsStore.migrate(AppSettings(ver = 17)).ver)
+        assertEquals(42, SettingsStore.migrate(AppSettings(ver = 17)).ver)
     }
 }

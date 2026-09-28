@@ -2,7 +2,7 @@
 
 Personal reminders app: Task mode (Tasks · Learn · Calls) ⇄ Shop mode (Buy · Shops · Products), geofenced shop arrivals, call-back reminders, Google Maps / OSM, cloud sync.
 
-**Install:** download the latest APK from the [Releases](../../releases/latest) page — or directly: [`releases/Remindly-2.8.apk`](releases/Remindly-2.8.apk). Every release is also committed under `releases/` with a `version.json` (versionCode, SHA-256) that the app reads to offer in-app updates from 2.9 on. A GitHub Action mirrors each new `version.json` into a Release.
+**Install:** download the latest APK from the [Releases](../../releases/latest) page — or directly: [`releases/Remindly-2.9.apk`](releases/Remindly-2.9.apk). Every release is also committed under `releases/` with a `version.json` (versionCode, SHA-256) that the app reads to offer in-app updates from 2.9 on. A GitHub Action mirrors each new `version.json` into a Release.
 
 ## Building from source
 Three files are deliberately **not** in this repository. Add them locally (all are git-ignored):

@@ -31,7 +31,10 @@ data class UiState(
     // v2.05 (N38): the "Buy Now" view — armed by a shop geofence, hidden only by the user.
     // Per-device view state (never synced), survives restarts until hidden.
     val buyNowShopId: Long? = null,
-    val buyNowAt: Long = 0L
+    val buyNowAt: Long = 0L,
+    // v2.9 (N47): update feed state — last check time and the newest feed seen (per device).
+    val updateLastCheck: Long = 0L,
+    val updateFeedJson: String? = null
 )
 
 // Gson-safe twin: every field nullable, defaults reapplied on load.
@@ -48,7 +51,9 @@ private data class UiStateRaw(
     val geoUsage: GeoUsageRaw?,
     val pendingNotice: String?,
     val buyNowShopId: Long?,
-    val buyNowAt: Long?
+    val buyNowAt: Long?,
+    val updateLastCheck: Long?,
+    val updateFeedJson: String?
 )
 
 /** Gson-safe twin of GeoUsage (fields may be null in old/partial JSON). */
@@ -78,7 +83,9 @@ object UiStore {
                 geoUsage = r.geoUsage?.let { GeoUsage(it.monthKey ?: "", (it.count ?: 0).coerceAtLeast(0), it.lockedMonth) } ?: GeoUsage(),
                 pendingNotice = r.pendingNotice,
                 buyNowShopId = r.buyNowShopId,
-                buyNowAt = r.buyNowAt ?: 0L
+                buyNowAt = r.buyNowAt ?: 0L,
+                updateLastCheck = r.updateLastCheck ?: 0L,
+                updateFeedJson = r.updateFeedJson
             )
         }
     }

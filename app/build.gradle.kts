@@ -23,8 +23,8 @@ android {
         applicationId = "com.krishna.remindly"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2008000
-        versionName = "2.8"
+        versionCode = 2009000
+        versionName = "2.9"
     }
 
     // Signing material is NEVER in the repository. It comes from keystore.properties (git-ignored)
@@ -91,6 +91,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")   // v2.9 (N45): branded launch splash
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")   // v2.02: Task.await() for the GPS fix

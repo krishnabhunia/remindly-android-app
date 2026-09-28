@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- v2.9 (N47): in-app updates from GitHub — the system installer still asks the user -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -36,6 +38,14 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Remindly">
+        <!-- v2.9 (N47): serves the downloaded update APK to the system installer -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.updates"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_paths" />
+        </provider>
         <!-- v2.02 (N33): Google Maps SDK key (Android-restricted; empty in builds without it) -->
         <meta-data android:name="com.google.android.geo.API_KEY" android:value="${MAPS_API_KEY}" />
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
@@ -126,7 +136,7 @@
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
             android:process=":error"
-            android:theme="@style/Theme.Remindly" />
+            android:theme="@style/Theme.Remindly.Splash" />
 
     </application>
 </manifest>

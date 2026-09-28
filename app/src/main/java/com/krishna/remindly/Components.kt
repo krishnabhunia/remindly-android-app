@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -363,6 +364,7 @@ fun YearHeader(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun MonthHeader(
     label: String,
@@ -375,7 +377,8 @@ fun MonthHeader(
     // matching the existing onClear pattern). Non-null only on active Tasks/Shop groups.
     onShare: (() -> Unit)? = null,
     check: GroupCheckState? = null,        // v2.7 (N43)
-    onCheck: (() -> Unit)? = null
+    onCheck: (() -> Unit)? = null,
+    onLongPress: (() -> Unit)? = null      // v2.9 (N45): the group options menu
 ) {
     val rotation by animateFloatAsState(if (collapsed) -90f else 0f, label = "monthChevron")
     val fsG = SettingsStore.s.collectAsState().value.fsGroupHeader
@@ -385,7 +388,7 @@ fun MonthHeader(
             .padding(start = 22.dp, end = 14.dp, top = 3.dp, bottom = 3.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(pal.chipBg)
-            .clickable(onClick = onToggle)
+            .combinedClickable(onClick = onToggle, onLongClick = onLongPress)
             .padding(horizontal = 14.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -985,6 +988,11 @@ private fun ItemChipList(item: Item, pal: TabPalette, isDoneList: Boolean) {
     // v1.49 item 2: Best U.P rank — labels only, the list is NOT reordered.
     val upRank = if (item.tab == Tab.SHOP)
         bestUpRanks(ItemStore.items.collectAsState().value)[item.id] else null
+    // v2.9 (N45): the linked product's category as a small chip (Buy items only).
+    if (item.tab == Tab.SHOP && item.productId != null) {
+        val cat = ProductStore.products.collectAsState().value.firstOrNull { it.id == item.productId }?.category?.takeIf { it.isNotBlank() }
+        if (cat != null) chips += { MetaChip(cat, pal.chipBg, pal.onChip) }
+    }
     // v1.80 (N5): Reminder Type chip — Alarm and Ring only; Notify is what every item already is.
     if (cf.alertType && showAlertChip(item.alertType)) {
         val hex = cardAlertColorFor(settings, item.tab, item.alertType)

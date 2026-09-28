@@ -84,7 +84,7 @@ class RegressionTest {
             sCardSwipe = false       // divergent → override entry sCardSwipe=OFF
         )
         val m = SettingsStore.migrate(v9)
-        assertEquals(41, m.ver)
+        assertEquals(42, m.ver)
         assertEquals(-1, m.tasksMoveDelaySec)
         assertEquals(7, m.shopMoveDelaySec)
         assertNull(m.tabGestureOv["tCardSwipe"])

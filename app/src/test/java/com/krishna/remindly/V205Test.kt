@@ -155,7 +155,7 @@ class V205Test {
     }
 
     @Test fun v205_schemaIs39() {
-        assertEquals(41, AppSettings().ver)
-        assertEquals(41, healSettings(AppSettings()).ver)
+        assertEquals(42, AppSettings().ver)
+        assertEquals(42, healSettings(AppSettings()).ver)
     }
 }

@@ -39,6 +39,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -156,14 +158,42 @@ fun ShareListSheet(
                 style = MaterialTheme.typography.labelSmall, color = InkHint
             )
             Spacer(Modifier.height(10.dp))
+            // v2.9 (N45): WhatsApp direct · system share · Copy, with the two text toggles.
+            val settingsNow = SettingsStore.s.collectAsState().value
+            var incDone by remember { mutableStateOf(settingsNow.shareIncludeDone) }
+            var incQty by remember { mutableStateOf(settingsNow.shareIncludeQty) }
+            fun textBody(): String = if (tab == Tab.SHOP) groupShareText(listName, items.filter { it.id in selected && !isLocked(it) }, incDone, incQty)
+                                     else shareAsText(listName, sharedItemsOf(items.filter { it.id in selected }, tab))
+            fun sendTo(pkg: String?) {
+                val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, textBody())
+                if (pkg != null) send.setPackage(pkg)
+                runCatching { context.startActivity(if (pkg == null) android.content.Intent.createChooser(send, "Share as text") else send) }
+                    .onFailure {
+                        Logger.e(context, "SHARE", it, "share to ${pkg ?: "chooser"} failed" + (if (pkg != null) " — falling back to the system sheet" else ""))
+                        if (pkg != null) sendTo(null) else Feedback.toast(context, "Nothing on this phone can share text")
+                    }
+            }
+            if (tab == Tab.SHOP) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Include completed", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall); Switch(checked = incDone, onCheckedChange = { incDone = it })
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Include quantities & shop", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall); Switch(checked = incQty, onCheckedChange = { incQty = it })
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { sendTo("com.whatsapp") }, modifier = Modifier.weight(1f).height(44.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))) { Text("WhatsApp", color = Color.White, fontWeight = FontWeight.Bold) }   // hex-ok: brand colour
+                OutlinedButton(onClick = { sendTo(null) }, modifier = Modifier.weight(1f).height(44.dp)) { Text("Share…") }
+                OutlinedButton(onClick = {
+                    runCatching {
+                        val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Remindly list", textBody())); Feedback.toast(context, "Copied")
+                    }.onFailure { Logger.e(context, "SHARE", it, "copy failed") }
+                }, modifier = Modifier.weight(1f).height(44.dp)) { Text("Copy") }
+            }
+            Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = {
-                    val body = shareAsText(listName, sharedItemsOf(items.filter { it.id in selected }, tab))
-                    val send = android.content.Intent(android.content.Intent.ACTION_SEND)
-                        .setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, body)
-                    runCatching { context.startActivity(android.content.Intent.createChooser(send, "Share as text")) }
-                        .onFailure { Logger.e(context, "SHARE", it, "share-as-text chooser failed") }
-                }, modifier = Modifier.height(50.dp)) { Text("Share as text") }
                 Spacer(Modifier.weight(1f))
                 Button(
                     modifier = Modifier.height(50.dp),

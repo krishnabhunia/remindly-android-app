@@ -4,4 +4,10 @@
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
+    <!-- v2.9 (N45): launch splash — icon on the brand colour, then the normal theme takes over -->
+    <style name="Theme.Remindly.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#3F3D9E</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Remindly</item>
+    </style>
 </resources>
