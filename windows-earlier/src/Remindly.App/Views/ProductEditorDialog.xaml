@@ -1,0 +1,54 @@
+<Window x:Class="Remindly.App.Views.ProductEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ProductEditorViewModel}"
+        Style="{StaticResource Window.Dialog}" WindowStartupLocation="CenterOwner"
+        Title="{Binding Heading}" Width="600" Height="620" MinWidth="520" MinHeight="480"
+        Icon="pack://application:,,,/Assets/app.ico">
+    <Grid Margin="24">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="{Binding Heading}" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="NAME" Style="{StaticResource Text.Field}" />
+            <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" FontSize="14" MinHeight="38" />
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                <StackPanel><TextBlock Text="CATEGORY" Style="{StaticResource Text.Field}" /><ComboBox IsEditable="True" ItemsSource="{Binding CategoryOptions}" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                <StackPanel Grid.Column="2"><TextBlock Text="DEFAULT UNIT" Style="{StaticResource Text.Field}" /><ComboBox IsEditable="True" ItemsSource="{Binding Units}" Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+            </Grid>
+            <TextBlock Text="NOTE" Style="{StaticResource Text.Field}" />
+            <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="AVAILABLE AT — tick the shops that stock it; prices are optional (the checkout calculator fills them in over time)" Style="{StaticResource Text.Field}" TextWrapping="Wrap" />
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,4,0,0">
+            <StackPanel>
+                <TextBlock Text="No shops yet — add shops first (Shop mode → Shops)." Style="{StaticResource Text.Caption}" Visibility="{Binding Links.Count, Converter={StaticResource InvBoolToVis}}" />
+                <ItemsControl ItemsSource="{Binding Links}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ProductLinkRowViewModel}">
+                            <Grid Margin="0,4">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="110" /><ColumnDefinition Width="110" /><ColumnDefinition Width="90" /></Grid.ColumnDefinitions>
+                                <CheckBox Content="{Binding Shop.Name}" IsChecked="{Binding IsOn}" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Style="{StaticResource TextBox.Base}" Text="{Binding PriceText, UpdateSourceTrigger=PropertyChanged}" Tag="₹ total" Margin="6,0,0,0" IsEnabled="{Binding IsOn}" />
+                                <TextBox Grid.Column="2" Style="{StaticResource TextBox.Base}" Text="{Binding UnitPriceText, UpdateSourceTrigger=PropertyChanged}" Tag="₹ / unit" Margin="6,0,0,0" IsEnabled="{Binding IsOn}" />
+                                <TextBlock Grid.Column="3" Text="{Binding LastAt}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2">
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Brush.Danger}" Margin="0,8,0,0" Visibility="{Binding Error, Converter={StaticResource BoolToVis}}" />
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                <Button Style="{StaticResource Button.Danger}" Content="Delete" Click="OnDelete" MinHeight="44" Margin="0,0,8,0" Visibility="{Binding IsNew, Converter={StaticResource InvBoolToVis}}" />
+                <Button Grid.Column="1" Style="{StaticResource Button.Secondary}" Content="Cancel" Click="OnCancel" MinHeight="44" Margin="0,0,4,0" IsCancel="True" />
+                <Button Grid.Column="2" Style="{StaticResource Button.Primary}" Content="Save" Click="OnSave" MinHeight="44" Margin="4,0,0,0" IsDefault="True" />
+            </Grid>
+        </StackPanel>
+    </Grid>
+</Window>

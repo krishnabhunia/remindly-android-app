@@ -1,0 +1,63 @@
+<UserControl x:Class="Remindly.App.Views.CallEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:CallEditorViewModel}">
+    <DockPanel>
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Brush.Sidebar.Border}" BorderThickness="0,1,0,0" Padding="20,12">
+            <StackPanel>
+                <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Brush.Danger}" Margin="0,0,0,8" TextWrapping="Wrap" Visibility="{Binding Error, Converter={StaticResource BoolToVis}}" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Button Style="{StaticResource Button.Danger}" Content="Delete" Command="{Binding DeleteCommand}" MinHeight="40" Margin="0,0,8,0" Visibility="{Binding IsNew, Converter={StaticResource InvBoolToVis}}" />
+                    <Button Grid.Column="1" Style="{StaticResource Button.Secondary}" Content="Cancel" Command="{Binding CancelCommand}" MinHeight="40" Margin="0,0,4,0" />
+                    <Button Grid.Column="2" Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" MinHeight="40" Margin="4,0,0,0" IsDefault="True" />
+                </Grid>
+            </StackPanel>
+        </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20,16,20,16">
+                <TextBlock Text="{Binding Heading}" Style="{StaticResource Text.Section}" FontSize="17" />
+                <TextBlock Text="Detected on your phone — the number can't change here." Style="{StaticResource Text.Caption}" Visibility="{Binding IsAuto, Converter={StaticResource BoolToVis}}" />
+                <TextBlock Text="PHONE NUMBER" Style="{StaticResource Text.Field}" />
+                <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Number, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsAuto, Converter={StaticResource InvBool}}" Tag="+91 98765 43210" FontFamily="{StaticResource Font.Mono}" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <StackPanel><TextBlock Text="NAME" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                    <StackPanel Grid.Column="2"><TextBlock Text="COMPANY" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Company, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                </Grid>
+                <TextBlock Text="NOTE" Style="{StaticResource Text.Field}" />
+                <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="56" VerticalContentAlignment="Top" />
+                <TextBlock Text="LABEL" Style="{StaticResource Text.Field}" />
+                <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Label, UpdateSourceTrigger=PropertyChanged}" Tag="e.g. Bank, Plumber" />
+                <CheckBox Content="Offer a WhatsApp message on the alert" IsChecked="{Binding HasMessage}" Margin="0,12,0,0" />
+                <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,0" Visibility="{Binding HasMessage, Converter={StaticResource BoolToVis}}" Tag="Hi, returning your call…" />
+
+                <TextBlock Text="WHEN TO REMIND" Style="{StaticResource Text.Field}" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <DatePicker SelectedDate="{Binding Date}" MinHeight="34" />
+                    <TextBox Grid.Column="1" Style="{StaticResource TextBox.Base}" Width="76" Margin="6,0,0,0" Text="{Binding TimeText, UpdateSourceTrigger=PropertyChanged}" Tag="18:00" />
+                </Grid>
+                <CheckBox Content="Repeat" IsChecked="{Binding Repeat}" Margin="0,10,0,0" />
+                <StackPanel Visibility="{Binding Repeat, Converter={StaticResource BoolToVis}}" Margin="0,6,0,0">
+                    <ComboBox ItemsSource="{Binding RepeatModeOptions}" SelectedValue="{Binding RepeatMode}" SelectedValuePath="Key" DisplayMemberPath="Value" />
+                    <ItemsControl ItemsSource="{Binding Weekdays}" Margin="0,8,0,0" Visibility="{Binding IsWeekly, Converter={StaticResource BoolToVis}}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate><DataTemplate><ToggleButton Style="{StaticResource Button.SmallChip}" Content="{Binding Label}" IsChecked="{Binding IsOn}" /></DataTemplate></ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding PreviewText}" Style="{StaticResource Text.Caption}" Foreground="{DynamicResource Brush.Accent}" />
+                </StackPanel>
+
+                <TextBlock Text="REMINDER TYPE" Style="{StaticResource Text.Field}" />
+                <WrapPanel>
+                    <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔔 Notify" IsChecked="{Binding AlertType, Converter={StaticResource EqualsToBool}, ConverterParameter=N, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="N" />
+                    <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔊 Ring" IsChecked="{Binding AlertType, Converter={StaticResource EqualsToBool}, ConverterParameter=R, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="R" />
+                    <ToggleButton Style="{StaticResource Button.SmallChip}" Content="⏰ Alarm" IsChecked="{Binding AlertType, Converter={StaticResource EqualsToBool}, ConverterParameter=A, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="A" />
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

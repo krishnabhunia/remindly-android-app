@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+                    xmlns:views="clr-namespace:Remindly.App.Views">
+
+    <!-- View model → view. ContentControls pick these up automatically. -->
+    <DataTemplate DataType="{x:Type vm:ItemListViewModel}"><views:ItemListView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:CallsViewModel}"><views:CallsView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ShopsViewModel}"><views:ShopsView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ProductsViewModel}"><views:ProductsView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ScheduledViewModel}"><views:ScheduledView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:BinViewModel}"><views:BinView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><views:SettingsView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ItemEditorViewModel}"><views:ItemEditorView /></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:CallEditorViewModel}"><views:CallEditorView /></DataTemplate>
+
+</ResourceDictionary>

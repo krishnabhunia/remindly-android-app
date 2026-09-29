@@ -1,0 +1,65 @@
+<Window x:Class="Remindly.App.Views.ShopEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+        mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ShopEditorViewModel}"
+        Style="{StaticResource Window.Dialog}" WindowStartupLocation="CenterOwner"
+        Title="{Binding Heading}" Width="560" SizeToContent="Height" ResizeMode="NoResize"
+        Icon="pack://application:,,,/Assets/app.ico">
+    <StackPanel Margin="24">
+        <TextBlock Text="{Binding Heading}" Style="{StaticResource Text.Title}" />
+        <TextBlock Text="NAME" Style="{StaticResource Text.Field}" />
+        <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" FontSize="14" MinHeight="38" />
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="CITY" Style="{StaticResource Text.Field}" />
+                <ComboBox ItemsSource="{Binding CityOptions}" SelectedItem="{Binding City}">
+                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name, FallbackValue=Unassigned, TargetNullValue=Unassigned}" /></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="CHAIN" Style="{StaticResource Text.Field}" />
+                <ComboBox ItemsSource="{Binding ChainOptions}" SelectedItem="{Binding Chain}">
+                    <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name, FallbackValue=Local shop, TargetNullValue=Local shop}" /></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Text="GEOFENCE (rings on the phone when you arrive)" Style="{StaticResource Text.Field}" />
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /><ColumnDefinition Width="8" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="8" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding LatText, UpdateSourceTrigger=PropertyChanged}" Tag="Latitude" />
+            <TextBox Grid.Column="2" Style="{StaticResource TextBox.Base}" Text="{Binding LngText, UpdateSourceTrigger=PropertyChanged}" Tag="Longitude" />
+            <Button Grid.Column="4" Style="{StaticResource Button.Secondary}" Command="{Binding PickOnMapCommand}"><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE707;" Style="{StaticResource Icon}" FontSize="13" /><TextBlock Text="Pick on map" Margin="6,0,0,0" /></StackPanel></Button>
+            <Button Grid.Column="6" Style="{StaticResource Button.Ghost}" Content="Clear" Command="{Binding ClearGeoCommand}" />
+        </Grid>
+        <Grid Margin="0,8,0,0">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <TextBlock Text="Radius" VerticalAlignment="Center" Margin="0,0,10,0" Style="{StaticResource Text.Caption}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding RadiusStops}" SelectedItem="{Binding Radius}" Width="120" HorizontalAlignment="Left" />
+        </Grid>
+
+        <StackPanel Visibility="{Binding HasGeo, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="ON ARRIVAL" Style="{StaticResource Text.Field}" />
+            <WrapPanel>
+                <ToggleButton Style="{StaticResource Button.SmallChip}" Content="Default" IsChecked="{Binding FollowDefaultArrive}" />
+                <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔔 Notify" IsChecked="{Binding ArriveN}" IsEnabled="{Binding FollowDefaultArrive, Converter={StaticResource InvBool}}" />
+                <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔊 Ring" IsChecked="{Binding ArriveR}" IsEnabled="{Binding FollowDefaultArrive, Converter={StaticResource InvBool}}" />
+                <ToggleButton Style="{StaticResource Button.SmallChip}" Content="⏰ Alarm" IsChecked="{Binding ArriveA}" IsEnabled="{Binding FollowDefaultArrive, Converter={StaticResource InvBool}}" />
+            </WrapPanel>
+            <TextBlock Text="{Binding ArriveExplain}" Style="{StaticResource Text.Caption}" />
+        </StackPanel>
+
+        <CheckBox Content="Default shop for new buy items" IsChecked="{Binding IsDefault}" Margin="0,12,0,0" />
+        <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Brush.Danger}" Margin="0,8,0,0" Visibility="{Binding Error, Converter={StaticResource BoolToVis}}" />
+        <Grid Margin="0,18,0,0">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <Button Style="{StaticResource Button.Danger}" Content="Delete" Click="OnDelete" MinHeight="44" Margin="0,0,8,0" Visibility="{Binding IsNew, Converter={StaticResource InvBoolToVis}}" />
+            <Button Grid.Column="1" Style="{StaticResource Button.Secondary}" Content="Cancel" Click="OnCancel" MinHeight="44" Margin="0,0,4,0" IsCancel="True" />
+            <Button Grid.Column="2" Style="{StaticResource Button.Primary}" Content="Save" Click="OnSave" MinHeight="44" Margin="4,0,0,0" IsDefault="True" />
+        </Grid>
+    </StackPanel>
+</Window>

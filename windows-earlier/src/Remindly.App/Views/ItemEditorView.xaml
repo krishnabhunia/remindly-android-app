@@ -1,0 +1,176 @@
+<UserControl x:Class="Remindly.App.Views.ItemEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ItemEditorViewModel}">
+    <DockPanel>
+        <!-- Action row (Cancel / Delete / Save) -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Brush.Sidebar.Border}" BorderThickness="0,1,0,0" Padding="20,12">
+            <StackPanel>
+                <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Brush.Danger}" Margin="0,0,0,8" TextWrapping="Wrap" Visibility="{Binding Error, Converter={StaticResource BoolToVis}}" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <Button Style="{StaticResource Button.Danger}" Content="Delete" Command="{Binding DeleteCommand}" MinHeight="40" Margin="0,0,8,0" Visibility="{Binding IsNew, Converter={StaticResource InvBoolToVis}}" />
+                    <Button Grid.Column="1" Style="{StaticResource Button.Secondary}" Content="Cancel" Command="{Binding CancelCommand}" MinHeight="40" Margin="0,0,4,0" />
+                    <Button Grid.Column="2" Style="{StaticResource Button.Primary}" Content="Save" Command="{Binding SaveCommand}" MinHeight="40" Margin="4,0,0,0" IsDefault="True" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="20,16,20,16">
+                <TextBlock Text="{Binding Heading}" Style="{StaticResource Text.Section}" FontSize="17" />
+
+                <TextBlock Text="NAME" Style="{StaticResource Text.Field}" />
+                <Grid>
+                    <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" FontSize="14" MinHeight="38" Tag="What is it?" />
+                </Grid>
+                <!-- product autocomplete (Buy) -->
+                <Border Style="{StaticResource Card}" Padding="6" Margin="0,4,0,0" Visibility="{Binding ShowProductMatches, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="📦 From your products" Style="{StaticResource Text.Caption}" Margin="6,2,0,4" />
+                        <ItemsControl ItemsSource="{Binding ProductMatches}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource Button.Ghost}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="8,5"
+                                            Command="{Binding DataContext.PickProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                        <TextBlock><Run Text="{Binding Name, Mode=OneWay}" /><Run Text="  " /><Run Text="{Binding Category, Mode=OneWay}" Foreground="{DynamicResource Brush.Text.Tertiary}" /><Run Text=" " /><Run Text="{Binding DefaultUnit, Mode=OneWay}" Foreground="{DynamicResource Brush.Text.Tertiary}" /></TextBlock>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Visibility="{Binding HasProductLink, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Shop}"><Run Text="Linked to product: " /><Run Text="{Binding ProductLinkText, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
+                    <Button Style="{StaticResource Button.Link}" Content="Unlink" Margin="10,0,0,0" Command="{Binding UnlinkCommand}" />
+                </StackPanel>
+
+                <TextBlock Text="NOTES" Style="{StaticResource Text.Field}" />
+                <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="140" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Tag="Optional" />
+
+                <!-- Schedule -->
+                <TextBlock Text="SCHEDULE" Style="{StaticResource Text.Field}" />
+                <WrapPanel>
+                    <ToggleButton Style="{StaticResource Button.SmallChip}" Content="No reminders" IsChecked="{Binding IsNone, Mode=OneWay}" Command="{Binding SetSchedCommand}" CommandParameter="NONE" Visibility="{Binding CanBeNone, Converter={StaticResource BoolToVis}}" />
+                    <ToggleButton Style="{StaticResource Button.SmallChip}" Content="One-time" IsChecked="{Binding SchedKind, Converter={StaticResource EqualsToBool}, ConverterParameter=ONCE, Mode=OneWay}" Command="{Binding SetSchedCommand}" CommandParameter="ONCE" />
+                    <ToggleButton Style="{StaticResource Button.SmallChip}" Content="Repeat" IsChecked="{Binding IsRepeat, Mode=OneWay}" Command="{Binding SetSchedCommand}" CommandParameter="REPEAT" />
+                </WrapPanel>
+                <TextBlock Text="This item never alerts — it just sits in your list." Style="{StaticResource Text.Caption}" Visibility="{Binding IsNone, Converter={StaticResource BoolToVis}}" />
+
+                <StackPanel Visibility="{Binding HasSchedule, Converter={StaticResource BoolToVis}}">
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <DatePicker SelectedDate="{Binding Date}" MinHeight="34" />
+                        <ToggleButton Grid.Column="1" Style="{StaticResource Button.SmallChip}" Margin="8,0,0,0" IsChecked="{Binding HasTime, Mode=OneWay}" Command="{Binding ToggleTimeCommand}" ToolTip="Date-only items ring at the Default due time" MinHeight="34" Content="&#xE823;" FontFamily="{StaticResource Font.Icons}" />
+                        <TextBox Grid.Column="2" Style="{StaticResource TextBox.Base}" Width="76" Margin="6,0,0,0" Text="{Binding TimeText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding HasTime}" Tag="18:00" />
+                    </Grid>
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Style="{StaticResource Button.Link}" Content="Today" Command="{Binding PickTodayCommand}" Margin="0,0,12,0" />
+                        <Button Style="{StaticResource Button.Link}" Content="Tomorrow" Command="{Binding PickTomorrowCommand}" Margin="0,0,12,0" />
+                        <Button Style="{StaticResource Button.Link}" Content="Next week" Command="{Binding PickNextWeekCommand}" Margin="0,0,12,0" />
+                        <Button Style="{StaticResource Button.Link}" Content="No date" Command="{Binding ClearDateCommand}" Visibility="{Binding IsRepeat, Converter={StaticResource InvBoolToVis}}" />
+                    </WrapPanel>
+
+                    <StackPanel Visibility="{Binding IsRepeat, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="REPEAT" Style="{StaticResource Text.Field}" />
+                        <ComboBox ItemsSource="{Binding RepeatModeOptions}" SelectedValue="{Binding RepeatMode}" SelectedValuePath="Key" DisplayMemberPath="Value" />
+                        <ItemsControl ItemsSource="{Binding Weekdays}" Margin="0,8,0,0" Visibility="{Binding IsWeekly, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate><DataTemplate><ToggleButton Style="{StaticResource Button.SmallChip}" Content="{Binding Label}" IsChecked="{Binding IsOn}" /></DataTemplate></ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Visibility="{Binding IsMonthlyDay, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
+                            <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding MonthDaysText, UpdateSourceTrigger=PropertyChanged}" Tag="Dates, e.g. 1, 15 (empty = the start date's day)" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding OrdChips}" Margin="0,8,0,0" Visibility="{Binding IsMonthlyOrd, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate><DataTemplate><ToggleButton Style="{StaticResource Button.SmallChip}" Content="{Binding Label}" IsChecked="{Binding IsOn}" /></DataTemplate></ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding IsEveryN, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="Every" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Style="{StaticResource TextBox.Base}" Width="60" Text="{Binding RepeatN, UpdateSourceTrigger=PropertyChanged}" />
+                            <ComboBox ItemsSource="{Binding UnitOptions}" SelectedValue="{Binding RepeatUnit}" SelectedValuePath="Key" DisplayMemberPath="Value" Width="110" Margin="8,0,0,0" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <TextBlock Text="Ends after" VerticalAlignment="Center" Margin="0,0,8,0" Style="{StaticResource Text.Caption}" />
+                            <TextBox Style="{StaticResource TextBox.Base}" Width="60" Text="{Binding RepeatCountText, UpdateSourceTrigger=PropertyChanged}" Tag="∞" />
+                            <TextBlock Text="times (blank = never)" VerticalAlignment="Center" Margin="8,0,0,0" Style="{StaticResource Text.Caption}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding PreviewText}" Style="{StaticResource Text.Caption}" Foreground="{DynamicResource Brush.Accent}" Margin="0,8,0,0" />
+                    </StackPanel>
+
+                    <TextBlock Text="REMINDER TYPE" Style="{StaticResource Text.Field}" />
+                    <WrapPanel>
+                        <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔔 Notify" IsChecked="{Binding AlertType, Converter={StaticResource EqualsToBool}, ConverterParameter=N, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="N" />
+                        <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔊 Ring" IsChecked="{Binding AlertType, Converter={StaticResource EqualsToBool}, ConverterParameter=R, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="R" />
+                        <ToggleButton Style="{StaticResource Button.SmallChip}" Content="⏰ Alarm" IsChecked="{Binding AlertType, Converter={StaticResource EqualsToBool}, ConverterParameter=A, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="A" />
+                        <ToggleButton Style="{StaticResource Button.SmallChip}" Content="🔕 Muted" IsChecked="{Binding IsMuted, Mode=OneWay}" Command="{Binding SetAlertCommand}" CommandParameter="OFF" />
+                    </WrapPanel>
+                </StackPanel>
+
+                <!-- Coming up / missed -->
+                <Border Style="{StaticResource Card}" Padding="12,8" Margin="0,10,0,0" Visibility="{Binding HasComingUp, Converter={StaticResource BoolToVis}}">
+                    <StackPanel><TextBlock Text="Coming up" Style="{StaticResource Text.Label}" /><TextBlock Text="{Binding ComingUpText}" Style="{StaticResource Text.Body}" Margin="0,4,0,0" /></StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card}" Padding="12,8" Margin="0,8,0,0" Visibility="{Binding HasMissed, Converter={StaticResource BoolToVis}}">
+                    <StackPanel><TextBlock Text="Missed alerts" Style="{StaticResource Text.Label}" /><TextBlock Text="{Binding MissedText}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0" /></StackPanel>
+                </Border>
+
+                <!-- Common extras -->
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="{Binding GroupLabel}" Style="{StaticResource Text.Field}" />
+                        <ComboBox IsEditable="True" ItemsSource="{Binding GroupOptions}" Text="{Binding Group, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="PRIORITY" Style="{StaticResource Text.Field}" />
+                        <ComboBox ItemsSource="{Binding PriorityOptions}" SelectedValue="{Binding PriorityKey}" SelectedValuePath="Key" DisplayMemberPath="Value" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Learn -->
+                <StackPanel Visibility="{Binding IsLearn, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel><TextBlock Text="PLATFORM" Style="{StaticResource Text.Field}" /><ComboBox IsEditable="True" ItemsSource="{Binding Platforms}" Text="{Binding Platform, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="HOURS SPENT" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding HoursText, UpdateSourceTrigger=PropertyChanged}" Tag="0" /></StackPanel>
+                    </Grid>
+                    <TextBlock Text="LINK" Style="{StaticResource Text.Field}" />
+                    <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" Tag="https://…" />
+                    <TextBlock Style="{StaticResource Text.Field}"><Run Text="PROGRESS " /><Run Text="{Binding Progress, Mode=OneWay}" /><Run Text="%" /></TextBlock>
+                    <Slider Minimum="0" Maximum="100" Value="{Binding Progress}" TickFrequency="5" IsSnapToTickEnabled="True" />
+                </StackPanel>
+
+                <!-- Buy -->
+                <StackPanel Visibility="{Binding IsShop, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="SHOP" Style="{StaticResource Text.Field}" />
+                    <ComboBox IsEditable="True" ItemsSource="{Binding ShopOptions}" Text="{Binding ShopName, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Text="{Binding CheapestHint}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Shop}" Margin="0,4,0,0" Visibility="{Binding HasCheapest, Converter={StaticResource BoolToVis}}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel><TextBlock Text="QUANTITY" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Tag="1" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="UNIT" Style="{StaticResource Text.Field}" /><ComboBox IsEditable="True" ItemsSource="{Binding Units}" Text="{Binding Unit, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                        <StackPanel Grid.Column="4"><TextBlock Text="PRICE ₹" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Tag="0" /></StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding LastPriceHint}" Style="{StaticResource Text.Caption}" Margin="0,4,0,0" Visibility="{Binding HasLastPrice, Converter={StaticResource BoolToVis}}" />
+                    <Grid Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="12" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="BUY AGAIN EVERY" Style="{StaticResource Text.Field}" ToolTip="After you buy it, it returns to the list after this long" />
+                            <StackPanel Orientation="Horizontal"><TextBox Style="{StaticResource TextBox.Base}" Width="60" Text="{Binding LapseText, UpdateSourceTrigger=PropertyChanged}" Tag="—" /><ComboBox ItemsSource="{Binding LapseUnitOptions}" SelectedValue="{Binding LapseUnitKey}" SelectedValuePath="Key" DisplayMemberPath="Value" Width="100" Margin="6,0,0,0" /></StackPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="EXPIRES ON" Style="{StaticResource Text.Field}" /><DatePicker SelectedDate="{Binding Expiry}" MinHeight="34" /></StackPanel>
+                    </Grid>
+                    <WrapPanel Margin="0,10,0,0">
+                        <CheckBox Content="Staple (one-tap re-add)" IsChecked="{Binding Staple}" Margin="0,0,18,0" />
+                        <CheckBox Content="Personal (PIN-locked)" IsChecked="{Binding Personal}" />
+                    </WrapPanel>
+                </StackPanel>
+                <CheckBox Content="Personal (PIN-locked)" IsChecked="{Binding Personal}" Margin="0,12,0,0" Visibility="{Binding IsShop, Converter={StaticResource InvBoolToVis}}" />
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>
