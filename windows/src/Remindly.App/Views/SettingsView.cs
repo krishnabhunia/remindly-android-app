@@ -53,7 +53,7 @@ public sealed class SettingsView : ScrollViewer, IPage
             RefreshUpdates();
         }, "Checks GitHub once a day — the first time on the next day — and installs a new version in the background. " +
            "Remindly restarts by itself when you are not using it; your data stays."));
-        upd.Children.Add(_updateTimes);
+        upd.Children.Add(Detach(_updateTimes));
         upd.Children.Add(Ui.Row(Detach(_checkBtn), Detach(_installBtn), Ui.Btn("Releases page", () => InstallInfo.OpenUrl(UpdateLogic.ReleasesUrl))));
         upd.Children.Add(Detach(_updateProgress));
         upd.Children.Add(Detach(_updateStatus));
