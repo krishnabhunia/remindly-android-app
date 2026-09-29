@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- THE Windows version. Bumping it in a pull request is the decision to release:
+         the merge to main builds, tests and publishes GitHub Release win-v<Version>. -->
+    <Version>2.11.0</Version>
+    <Authors>Krishna Bhunia</Authors>
+    <Company>Krishna Bhunia</Company>
+    <Product>Remindly</Product>
+    <Copyright>Copyright © 2026 Krishna Bhunia</Copyright>
+    <NeutralLanguage>en</NeutralLanguage>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

@@ -1,6 +1,14 @@
-# Remindly — Android
+# Remindly — Android and Windows
 
 Personal reminders app: Task mode (Tasks · Learn · Calls) ⇄ Shop mode (Buy · Shops · Products), geofenced shop arrivals, call-back reminders, Google Maps / OSM, cloud sync.
+
+| SrNo. | App | Folder | Stack | Release tags | CI (runs by itself on every PR and on merge to `main`) |
+|---|---|---|---|---|---|
+| 1 | Android | `app/` | Kotlin / Jetpack Compose | `vX.Y` | [`build-release.yml`](.github/workflows/build-release.yml) |
+| 2 | Windows 10/11 | [`windows/`](windows/ReadMe.md) | C# / .NET 8 / WPF, Inno Setup | `win-vX.Y.Z` | [`windows.yml`](.github/workflows/windows.yml) |
+
+A merge to `main` that bumps an app's version builds, tests and publishes that app's release; both apps then offer the
+update in-app. The Windows download is one zip with two folders: `installer/` and `portable/` — see [`windows/ReadMe.md`](windows/ReadMe.md).
 
 **Install:** download the latest APK from the [Releases](../../releases/latest) page. Installed copies update themselves (Settings → Updates). `releases/version.json` (versionCode, SHA-256, download URL) is the feed the app reads to offer in-app updates from 2.9 on.
 
