@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remindly N48 Lists First</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Roboto:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: a design-round board. Page chrome follows the viewer theme; phone frames show the app's own Shop-mode palette. */
+:root{
+  --bg:#EEEEF3; --panel:#FFFFFF; --ink:#1B1B26; --sub:#5E5E72; --line:#D5D5DF; --head:#F0F0F5;
+  --accent:#0B6E4F; --flag:#9A6A00; --flag-bg:#FFF4DC; --red:#C00000; --blue:#1A3E8C; --rec:#E7F6EC;
+  --f-body:'IBM Plex Sans',system-ui,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,monospace; --f-app:'Roboto',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15151B; --panel:#1F1F28; --ink:#ECECF4; --sub:#A8A8BC; --line:#34343F; --head:#26262F;
+  --accent:#9FE8CF; --flag:#FFD54F; --flag-bg:#3A2E10; --red:#FF8A80; --blue:#8FB3FF; --rec:#16352A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15151B; --panel:#1F1F28; --ink:#ECECF4; --sub:#A8A8BC; --line:#34343F; --head:#26262F;
+  --accent:#9FE8CF; --flag:#FFD54F; --flag-bg:#3A2E10; --red:#FF8A80; --blue:#8FB3FF; --rec:#16352A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.5; margin:0}
+.wrap{max-width:1400px; margin:0 auto; padding:28px 20px 60px}
+h1{font-size:26px; line-height:1.25; margin:0 0 6px; text-wrap:balance}
+h2{font-size:19px; margin:40px 0 12px; padding-bottom:6px; border-bottom:2px solid var(--line); color:var(--blue); text-wrap:balance}
+.meta{color:var(--sub); font-size:14px; max-width:78ch}
+.eyebrow{font-family:var(--f-mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px}
+.red{color:var(--red); font-weight:600}
+code,.mono{font-family:var(--f-mono); font-size:.9em}
+
+/* flow strip */
+.flows{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; margin-top:18px}
+.flowcard{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; min-width:0}
+.flowcard .lab{font-family:var(--f-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--sub); margin-bottom:8px}
+.steps{display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:14px}
+.steps span.b{border:1px solid var(--line); background:var(--head); border-radius:8px; padding:4px 10px}
+.steps span.b.new{border-color:var(--accent); color:var(--accent); font-weight:600}
+.steps .ar{color:var(--sub)}
+
+/* phones */
+.grid{display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; margin-top:14px}
+.unit{width:312px; max-width:100%}
+.cap{font-size:13.5px; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:10px; line-height:1.5}
+.cap .ct{display:block; font-weight:700; margin-bottom:3px}
+.cap .fl{display:inline-block; font-family:var(--f-mono); font-size:11px; color:var(--flag); background:var(--flag-bg); border-radius:6px; padding:1px 6px; margin-top:4px}
+
+.phone{--p-ink:#1B1B26; --p-sub:#6B6B80; --p-hint:#9A9AAC; --p-surf:#F4F4F9; --p-card:#fff; --shop:#0E9F6E; --shop-on:#0B6E4F; --shop-chip:#E0F5EE;
+  width:312px; height:648px; background:var(--p-surf); color:var(--p-ink); border:8px solid #23232E; border-radius:30px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.18); font-family:var(--f-app); position:relative; line-height:1.3}
+.phone.dk{--p-ink:#ECECF4; --p-sub:#A8A8BC; --p-hint:#8A8A9E; --p-surf:#15151C; --p-card:#1F1F28; --shop-chip:#16352A; --shop-on:#9FE8CF}
+.status{height:20px; display:flex; justify-content:space-between; padding:3px 14px; font-size:9px; color:#fff; position:relative; z-index:2}
+.hdr{padding:24px 14px 12px; margin-top:-20px; color:#fff; background:linear-gradient(120deg,#0E9F6E,#00B8A9)}
+.hrow{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.hl{display:flex; align-items:center; min-width:0}
+.ham{font-size:19px; margin-right:12px; line-height:1}
+.app{font-size:17px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.subt{font-size:11px; opacity:.92; margin-top:2px}
+.hic{display:flex; gap:12px; font-size:14px}
+.body{flex:1; overflow:hidden; padding:10px 10px 0; display:flex; flex-direction:column; gap:7px; position:relative}
+.nav{height:56px; background:var(--p-card); border-top:1px solid rgba(128,128,150,.2); display:flex; flex:none}
+.nitem{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; font-size:8.5px; color:#9A9AAC; font-weight:600}
+.nitem .nico{font-size:15px}
+.nitem.on{color:var(--shop)} .nitem.on .bg{background:rgba(14,159,110,.14); border-radius:12px; padding:1px 12px}
+
+.chips{display:flex; gap:6px; align-items:center}
+.fchip{font-size:9.5px; padding:4px 9px; border-radius:12px; background:var(--p-card); border:1px solid #D8D8E2; color:#55556A}
+.fchip.on{background:var(--shop); border-color:var(--shop); color:#fff; font-weight:700}
+.dk .fchip{border-color:#3A3A48; color:#C8C8D8}
+.dk .fchip.on{color:#fff}
+
+.lcard{background:var(--p-card); border-radius:14px; padding:10px; display:flex; gap:10px; align-items:flex-start; box-shadow:0 1px 2px rgba(0,0,0,.07)}
+.lico{width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:19px; flex:none}
+.lmid{flex:1; min-width:0}
+.lname{font-size:13px; font-weight:700; display:flex; align-items:center; gap:5px}
+.lsub{font-size:9.8px; color:var(--p-sub); margin-top:1px}
+.bar{height:5px; background:#E6E6EE; border-radius:3px; margin:6px 0 5px; overflow:hidden}
+.dk .bar{background:#2E2E3A}
+.bar>div{height:100%; background:var(--shop); border-radius:3px}
+.spills{display:flex; gap:4px; flex-wrap:wrap}
+.sp{font-size:8.3px; font-weight:700; padding:2px 6px; border-radius:8px; background:var(--shop-chip); color:var(--shop-on)}
+.sp.grey{background:#EFEFF5; color:#55556A}
+.sp.amber{background:#FFF3D6; color:#9A6A00}
+.lright{display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none}
+.cnt{min-width:24px; height:20px; border-radius:10px; background:var(--shop); color:#fff; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 6px}
+.cnt.zero{background:#E4E4EC; color:#6B6B80}
+.dots{color:#A0A0B4; font-size:13px; line-height:1}
+.lcard.unsorted{background:transparent; border:1.5px dashed #C9C9D6; box-shadow:none}
+.lcard.sel{outline:2px solid var(--shop)}
+
+.addbar{margin-top:auto; margin-bottom:8px; display:flex; align-items:center; gap:8px; background:var(--p-card); border:1.4px solid #C9C9D6; border-radius:24px; padding:7px 7px 7px 14px; font-size:11.5px; color:var(--p-hint)}
+.dk .addbar{border-color:#3A3A48}
+.addbar .mic{width:28px; height:28px; border-radius:50%; background:#EFEFF5; display:flex; align-items:center; justify-content:center; font-size:13px}
+.addbar .go{width:30px; height:30px; border-radius:50%; background:var(--shop); color:#fff; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700}
+.addbar.typing{color:var(--p-ink); border-color:var(--shop)}
+
+.seg3{display:flex; background:rgba(255,255,255,.22); border-radius:50px; padding:3px; gap:2px; margin-top:10px}
+.seg3 div{flex:1; text-align:center; font-size:10.5px; font-weight:700; color:#fff; padding:6px 4px; border-radius:50px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.seg3 div.on{background:#fff; color:#0B6E4F}
+
+.gh{display:flex; align-items:center; gap:7px; margin:6px 2px 0; font-size:10.5px; font-weight:800; color:var(--shop-on)}
+.gcount{margin-left:auto; font-weight:600; color:#8A8A9A; font-size:9.5px}
+.irow{display:flex; gap:8px; align-items:center; background:var(--p-card); border-radius:12px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.irow .t{font-size:11.5px; font-weight:600}
+.irow .s{font-size:9.3px; color:var(--p-sub)}
+.irow .gr{flex:1; min-width:0}
+.cb{width:18px; height:18px; border-radius:5px; border:2px solid #9A9AAC; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex:none}
+.cb.on{background:var(--shop); border-color:var(--shop)}
+.irow.done .t{text-decoration:line-through; color:#8A8A9A}
+.price{font-size:10px; font-weight:700; color:var(--p-sub)}
+
+.dim{position:absolute; inset:0; background:rgba(20,20,30,.38); z-index:3}
+.sheet{position:absolute; left:0; right:0; bottom:0; z-index:4; background:var(--p-card); border-radius:18px 18px 0 0; padding:12px 12px 14px; box-shadow:0 -4px 16px rgba(0,0,0,.15); display:flex; flex-direction:column; gap:8px}
+.handle{width:34px; height:4px; background:#D5D5DF; border-radius:2px; align-self:center}
+.sht{font-size:14px; font-weight:700; color:#0B6E4F}
+.field{border:1.4px solid #C9C9D6; border-radius:10px; padding:6px 9px; font-size:11.5px; background:#fff}
+.field.focus{border-color:var(--shop)}
+.field .lbl{display:block; font-size:8.5px; color:#6B6B80; margin-bottom:1px}
+.emo{display:flex; gap:5px; flex-wrap:wrap}
+.emo span{width:30px; height:30px; border-radius:9px; background:#F1F1F6; display:flex; align-items:center; justify-content:center; font-size:15px}
+.emo span.on{background:#E0F5EE; outline:2px solid var(--shop)}
+.srow{display:flex; align-items:center; gap:8px; font-size:11px; padding:4px 2px}
+.srow .l{flex:1}
+.srow .l small{display:block; font-size:9px; color:#6B6B80}
+.val{font-size:10.5px; color:#0B6E4F; font-weight:700}
+.switch{width:30px; height:17px; border-radius:9px; background:var(--shop); position:relative; flex:none}
+.switch::after{content:''; position:absolute; right:2px; top:2px; width:13px; height:13px; border-radius:50%; background:#fff}
+.switch.off{background:#C9C9D6} .switch.off::after{left:2px; right:auto}
+.abtn{display:flex; gap:8px}
+.abtn div{flex:1; text-align:center; font-size:12px; font-weight:700; padding:10px 0; border-radius:12px}
+.abtn .cancel{border:1.5px solid #C9C9D6; color:#55556A; background:#fff}
+.abtn .save{background:var(--shop); color:#fff}
+.abtn .del{background:#D32F2F; color:#fff}
+
+.menu{position:absolute; left:28px; right:28px; z-index:4; background:var(--p-card); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.25); padding:6px 0; font-size:12px}
+.menu .mt{padding:6px 14px 0; font-weight:700; font-size:13px}
+.menu .ms{padding:0 14px 6px; font-size:9.5px; color:#6B6B80; border-bottom:1px solid #EEE}
+.menu .mi{padding:8px 14px}
+.menu .mi.redx{color:#D32F2F; border-top:1px solid #EEE}
+.sugg{display:flex; align-items:center; gap:8px; background:var(--p-card); border-radius:10px; padding:7px 9px; font-size:11.5px; font-weight:600}
+.sugg .plus{width:22px; height:22px; border-radius:50%; background:var(--shop-chip); color:var(--shop-on); display:flex; align-items:center; justify-content:center; font-weight:800}
+.sugg .cat{margin-left:auto; font-size:9px; color:#6B6B80; font-weight:500; text-align:right}
+.sec{font-size:9.5px; font-weight:800; letter-spacing:.05em; color:#8A8A9A; margin:4px 2px 0; text-transform:uppercase}
+.banner{display:flex; align-items:center; gap:8px; background:#E7F6EC; border:1px solid #9FD8C4; border-radius:12px; padding:8px 10px; font-size:10.5px; color:#0B6E4F}
+.banner .x{margin-left:auto; font-weight:800; border:1px solid #9FD8C4; border-radius:50px; padding:1px 8px; white-space:nowrap}
+.tpl{display:flex; align-items:center; gap:9px; background:var(--p-card); border-radius:12px; padding:9px 10px; font-size:11.5px; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.tpl small{display:block; font-weight:400; color:#6B6B80; font-size:9.3px}
+.tpl .add{margin-left:auto; color:var(--shop); font-weight:800; font-size:10.5px}
+.empty{text-align:center; padding:18px 10px 4px}
+.empty .big{font-size:40px}
+.empty .h{font-size:14px; font-weight:700; margin-top:4px}
+.empty .p{font-size:10.5px; color:#6B6B80; margin-top:3px}
+.btn{display:flex; align-items:center; justify-content:center; gap:6px; background:var(--shop); color:#fff; font-size:12px; font-weight:700; padding:9px; border-radius:12px}
+.acc{background:var(--p-card); border-radius:12px; padding:8px 10px; box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.acc .ah{font-size:12px; font-weight:700; color:#0B6E4F; margin-bottom:2px}
+.acc .srow{border-top:1px solid #F0F0F6}
+.tri{display:flex; border:1.4px solid var(--shop); border-radius:9px; overflow:hidden; flex:none}
+.tri span{font-size:9px; font-weight:700; padding:3px 6px; color:#0B6E4F}
+.tri span.on{background:var(--shop); color:#fff}
+.toast{position:absolute; left:12px; right:12px; bottom:66px; background:#1F1F2E; color:#fff; font-size:10.5px; padding:9px 12px; border-radius:10px; display:flex; z-index:5}
+.toast b{margin-left:auto; color:#9FE8CF}
+
+/* tables */
+.tw{overflow-x:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-top:12px}
+table{border-collapse:collapse; width:100%; font-size:14px; min-width:720px}
+th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top}
+th{background:var(--head); color:var(--blue); font-weight:700}
+td.n,th.n{width:56px; text-align:center; font-variant-numeric:tabular-nums}
+tr.rec td{background:var(--rec)}
+.star{color:var(--flag); font-weight:700}
+.flagtag{font-family:var(--f-mono); font-size:11.5px; color:var(--flag); background:var(--flag-bg); padding:1px 6px; border-radius:6px; white-space:nowrap}
+ul.sum{margin:10px 0 0; padding-left:20px; max-width:90ch}
+ul.sum li{margin:4px 0}
+/* round 2: sharing */
+.ib{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.2); flex:none}
+.ib svg{width:16px; height:16px}
+.ib.wa{background:#25D366; box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+.ib.hot{outline:2px dashed #FFE082; outline-offset:2px}
+.hic.r2{align-items:center; gap:8px}
+.tip{position:absolute; z-index:6; background:#1F1F2E; color:#fff; font-size:9.5px; font-weight:700; padding:4px 8px; border-radius:8px; white-space:nowrap}
+.tip::before{content:''; position:absolute; top:-5px; border:5px solid transparent; border-top:0; border-bottom-color:#1F1F2E}
+.tip.a::before{right:12px} .tip.b::before{right:12px}
+.pv{font-family:var(--f-mono); font-size:9.6px; line-height:1.45; white-space:pre; background:#F4F4F9; border:1px solid #DCDCE6; border-radius:10px; padding:8px 9px; color:#1B1B26; overflow:hidden}
+.pv .u{color:#C62828; font-weight:700} .pv .bt{color:#0B6E4F; font-weight:700}
+.wabtns{display:flex; gap:6px}
+.wabtns div{flex:1; display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; font-weight:700; padding:9px 0; border-radius:11px; border:1.5px solid #C9C9D6; color:#44445A; background:#fff}
+.wabtns .g{background:#25D366; border-color:#25D366; color:#fff}
+.wabtns svg{width:14px; height:14px}
+.wchat{flex:1; display:flex; flex-direction:column; background:#E9E2D8}
+.whdr{background:#1F6F5C; color:#fff; padding:24px 12px 10px; margin-top:-20px; display:flex; align-items:center; gap:10px}
+.whdr .av{width:30px; height:30px; border-radius:50%; background:#C8E6C9; color:#1F6F5C; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px}
+.whdr .nm{font-size:13px; font-weight:700} .whdr .st{font-size:9.5px; opacity:.85}
+.wbody{flex:1; padding:12px 10px; display:flex; flex-direction:column; gap:6px; justify-content:flex-end}
+.bub{align-self:flex-end; max-width:88%; background:#D9FDD3; border-radius:10px 10px 2px 10px; padding:7px 9px 4px; font-size:10.8px; line-height:1.5; color:#111; white-space:pre-wrap; box-shadow:0 1px 1px rgba(0,0,0,.12)}
+.bub .tm{display:block; text-align:right; font-size:8.5px; color:#667}
+.winput{display:flex; align-items:center; gap:8px; padding:8px 8px 10px}
+.winput .f{flex:1; background:#fff; border-radius:20px; padding:8px 12px; font-size:10.5px; color:#667}
+.winput .s{width:32px; height:32px; border-radius:50%; background:#1F6F5C; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px}
+.pick{background:#fff; flex:1; display:flex; flex-direction:column}
+.pick .row{display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid #F0F0F0; font-size:12px}
+.pick .row .av{width:30px; height:30px; border-radius:50%; background:#DDE7F0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#44556A}
+.pick .row .ck{margin-left:auto; width:18px; height:18px; border-radius:50%; border:2px solid #B0B0B0}
+.pick .row .ck.on{background:#1F6F5C; border-color:#1F6F5C}
+.pick .lbl2{font-size:10px; font-weight:700; color:#1F6F5C; padding:10px 12px 4px}
+.code{font-family:var(--f-mono); font-size:13.5px; line-height:1.55; white-space:pre; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; overflow-x:auto; margin-top:12px; color:var(--ink)}
+.code .c-u{color:var(--red); font-weight:600} .code .c-b{color:var(--accent); font-weight:600} .code .c-h{color:var(--blue); font-weight:700}
+</style>
+</head><body>
+<div class="wrap">
+  <div class="eyebrow">Design rounds 1–2 · N48 · 29-Sep-2026 · frames only, nothing built</div>
+  <h1>Remindly — Buy tab becomes Lists first, then items inside each list</h1>
+  <p class="meta">Your request: the Buy tab today drops item cards straight onto one screen. Instead, you first create <b>Lists</b> (Groceries, Monthly stock, Birthday party…) and then add items <b>inside</b> a list. The frames below show every screen that changes, followed by the behaviour changes, the data model, and the questions I need answered before building.</p>
+
+  <div class="flows">
+    <div class="flowcard"><div class="lab">Today (v2.10)</div>
+      <div class="steps"><span class="b">Buy tab</span><span class="ar">→</span><span class="b">All item cards (grouped by group / shop / date)</span><span class="ar">→</span><span class="b">Quick-add item</span></div></div>
+    <div class="flowcard"><div class="lab">Proposed (N48)</div>
+      <div class="steps"><span class="b new">Buy tab = Lists</span><span class="ar">→</span><span class="b new">Tap a list</span><span class="ar">→</span><span class="b">Items of that list</span><span class="ar">→</span><span class="b">Quick-add into that list</span></div></div>
+  </div>
+
+  <h2>A · Core flow</h2>
+  <div class="grid">
+
+    <!-- L1 Lists home -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="chips"><span class="fchip on">Recent</span><span class="fchip">A–Z</span><span class="fchip">Custom</span><span class="fchip" style="margin-left:auto">Show done lists</span></div>
+        <div class="lcard"><div class="lico" style="background:#E0F5EE">🛒</div><div class="lmid"><div class="lname">Groceries <span style="font-size:10px">📌</span></div><div class="lsub">5 to buy · 2 done · updated 2 h ago</div><div class="bar"><div style="width:29%"></div></div><div class="spills"><span class="sp">D-Mart – Kalyan</span><span class="sp grey">≈ ₹640</span></div></div><div class="lright"><span class="cnt">5</span><span class="dots">⋮</span></div></div>
+        <div class="lcard"><div class="lico" style="background:#FFF3E0">📦</div><div class="lmid"><div class="lname">Monthly stock</div><div class="lsub">4 to buy · 8 done · updated yesterday</div><div class="bar"><div style="width:67%"></div></div><div class="spills"><span class="sp">Reliance Smart</span><span class="sp amber">Due Sat 4 Oct</span></div></div><div class="lright"><span class="cnt">4</span><span class="dots">⋮</span></div></div>
+        <div class="lcard"><div class="lico" style="background:#EDE7F6">🎁</div><div class="lmid"><div class="lname">Riya's birthday</div><div class="lsub">3 to buy · 0 done · updated 3 d ago</div><div class="bar"><div style="width:0%"></div></div><div class="spills"><span class="sp grey">No shop yet</span></div></div><div class="lright"><span class="cnt">3</span><span class="dots">⋮</span></div></div>
+        <div class="lcard"><div class="lico" style="background:#E8F0FE">💊</div><div class="lmid"><div class="lname">Medicines</div><div class="lsub">All bought · updated 5 d ago</div><div class="bar"><div style="width:100%"></div></div></div><div class="lright"><span class="cnt zero">✓</span><span class="dots">⋮</span></div></div>
+        <div class="lcard unsorted"><div class="lico" style="background:#EFEFF5">🗂</div><div class="lmid"><div class="lname">Unsorted</div><div class="lsub">1 item without a list · tap to sort</div></div><div class="lright"><span class="cnt zero">1</span></div></div>
+        <div class="addbar">New list… <span class="go" style="margin-left:auto">＋</span></div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L1 · Buy tab opens on your Lists</span>Each card shows icon, name, to-buy count, a progress bar, the shop(s) its items point to, an estimated total from last prices and an optional due date. Pinned lists stay on top. Items that belong to no list collect in a dashed <b>Unsorted</b> card, which hides itself when empty. The bottom bar now creates a <b>list</b>, not an item.<br><span class="fl">⚑ behaviour change: Buy no longer opens on item cards</span></div></div>
+
+    <!-- L2 New list sheet -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="lcard"><div class="lico" style="background:#E0F5EE">🛒</div><div class="lmid"><div class="lname">Groceries</div><div class="lsub">5 to buy · 2 done</div></div></div>
+        <div class="dim"></div>
+        <div class="sheet"><div class="handle"></div>
+          <div class="sht">New list</div>
+          <div class="field focus"><span class="lbl">List name</span>Diwali shopping<span style="color:#0E9F6E">|</span></div>
+          <div style="font-size:9.5px;color:#6B6B80;font-weight:700">Icon</div>
+          <div class="emo"><span>🛒</span><span class="on">🪔</span><span>📦</span><span>🎁</span><span>💊</span><span>🏠</span><span>🧹</span><span>👕</span><span>＋</span></div>
+          <div class="srow"><div class="l">Usual shop<small>Pre-fills the shop on new items</small></div><span class="val">Any ›</span></div>
+          <div class="srow"><div class="l">Shopping day<small>Optional — reminds you that morning</small></div><span class="val">Sun 19 Oct ›</span></div>
+          <div class="srow"><div class="l">Private (Personal PIN)</div><span class="switch off"></span></div>
+          <div class="abtn"><div class="cancel">Cancel</div><div class="save">Create &amp; add items</div></div>
+        </div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L2 · Create a list</span>Only the name is required. Icon reuses the N45 emoji picker. Usual shop, shopping day and Private are optional. <b>Create &amp; add items</b> opens the new list straight away (L3) with the keyboard up on its add bar.</div></div>
+
+    <!-- L3 Inside a list -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">🛒 Groceries</div><div class="subt">5 to buy · 2 done · ≈ ₹640</div></div></div><div class="hic">📤 ⋮</div></div>
+        <div class="seg3"><div class="on">To buy · 5</div><div>Done · 2</div></div></div>
+      <div class="body">
+        <div class="chips"><span class="fchip on">By shop</span><span class="fchip">By category</span><span class="fchip">None</span></div>
+        <div class="gh"><span>🏬</span>D-Mart – Kalyan<span class="gcount">3 items</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Milk · 2 L</div><div class="s">Dairy · best ₹54/L here</div></div><span class="price">₹108</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Eggs · 12</div><div class="s">Dairy</div></div><span class="price">₹84</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Basmati rice · 5 kg</div><div class="s">Staples</div></div><span class="price">₹395</span></div>
+        <div class="gh"><span>🏬</span>No shop<span class="gcount">2 items</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Bread</div><div class="s">Bakery</div></div><span class="price">₹45</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Coriander</div><div class="s">Vegetables</div></div><span class="price">—</span></div>
+        <div class="addbar">Add to Groceries… <span class="mic" style="margin-left:auto">🎤</span><span class="go">＋</span></div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L3 · Inside a list</span>Back arrow returns to Lists (system Back does the same). The To buy | Done toggle, card gestures, checkout calculator and cheapest-shop hints all work exactly as today, scoped to this one list. Grouping inside a list becomes By shop / By category / None, since "By group" no longer makes sense here. Every item added here belongs to <b>Groceries</b> automatically.<br><span class="fl">⚑ "By group" option removed inside a list</span></div></div>
+
+    <!-- L4 add item with suggestions -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">🛒 Groceries</div><div class="subt">5 to buy · 2 done</div></div></div><div class="hic">📤 ⋮</div></div></div>
+      <div class="body">
+        <div class="sec">Suggested · from Products</div>
+        <div class="sugg"><div class="plus">+</div>Toor dal<span class="cat">Staples<br>₹142/kg best at D-Mart</span></div>
+        <div class="sugg"><div class="plus">+</div>Tomato<span class="cat">Vegetables</span></div>
+        <div class="sugg"><div class="plus">+</div>Tomato ketchup<span class="cat">Pantry</span></div>
+        <div class="sec">Also in another list</div>
+        <div class="sugg" style="opacity:.85"><div class="plus" style="background:#FFF3D6;color:#9A6A00">!</div>Toothpaste<span class="cat">already in 📦 Monthly stock</span></div>
+        <div class="sec">Recently bought in this list</div>
+        <div class="sugg"><div class="plus">+</div>Tomato · 1 kg<span class="cat">bought 6 d ago</span></div>
+        <div class="addbar typing">To<span style="color:#0E9F6E">|</span><span style="margin-left:auto;font-size:9px;color:#6B6B80">qty 1 ▾</span><span class="go">＋</span></div>
+        <div style="height:132px;background:#D9DBE1;margin:0 -10px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#55556A">keyboard</div>
+      </div>
+    </div>
+    <div class="cap"><span class="ct">L4 · Adding an item inside a list</span>Same N45 suggestions (Products + recent purchases), plus two list-aware additions: <b>Recently bought in this list</b> ranks first, and a warning row when the same item already sits in another list, so you don't buy toothpaste twice.</div></div>
+  </div>
+
+  <h2>B · Managing lists</h2>
+  <div class="grid">
+
+    <!-- L5 List menu -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="lcard sel" style="position:relative;z-index:4"><div class="lico" style="background:#FFF3E0">📦</div><div class="lmid"><div class="lname">Monthly stock</div><div class="lsub">4 to buy · 8 done</div></div><div class="lright"><span class="cnt">4</span></div></div>
+        <div class="dim"></div>
+        <div class="menu" style="top:74px">
+          <div class="mt">📦 Monthly stock</div><div class="ms">4 to buy · 8 done · created 12 Aug</div>
+          <div class="mi">📌 Pin to top</div>
+          <div class="mi">✏️ Rename &amp; icon</div>
+          <div class="mi">📤 Share list</div>
+          <div class="mi">📑 Duplicate list</div>
+          <div class="mi">🔁 Restart list (all done → to buy)</div>
+          <div class="mi">☑ Mark all bought</div>
+          <div class="mi">⇄ Merge into another list…</div>
+          <div class="mi redx">🗑 Delete list…</div>
+        </div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L5 · Long-press a list card (or ⋮)</span>The N45 group menu moves onto the list card. New: <b>Pin</b>, <b>Restart list</b> (perfect for a monthly list: everything bought goes back to To buy in one tap), and <b>Merge</b>. Drag-to-reorder is available when the sort chip is <b>Custom</b>.</div></div>
+
+    <!-- L6 Delete -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="dim"></div>
+        <div class="sheet"><div class="handle"></div>
+          <div class="sht" style="color:#D32F2F">Delete “Monthly stock”?</div>
+          <div style="font-size:11px;color:#44445A">It holds 12 items (4 to buy, 8 done). What should happen to them?</div>
+          <div class="tpl" style="border:2px solid #0E9F6E"><span class="cb on">✓</span><div>Keep items — move to Unsorted<small>Nothing is lost; price history stays</small></div></div>
+          <div class="tpl"><span class="cb"></span><div>Move items to another list<small>Choose: Groceries, Riya's birthday…</small></div></div>
+          <div class="tpl"><span class="cb"></span><div>Delete the items too<small>Soft-deleted, Undo for 5 s</small></div></div>
+          <div class="abtn" style="margin-top:4px"><div class="cancel">Cancel</div><div class="del">Delete list</div></div>
+        </div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L6 · Deleting a list never silently deletes items</span>The safe choice is pre-selected: items move to Unsorted. Deleting items too is explicit, soft-delete and undoable, same as every other delete in Remindly.</div></div>
+
+    <!-- L7 Empty / templates -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">No lists yet</div></div></div><div class="hic">⚙</div></div></div>
+      <div class="body">
+        <div class="empty"><div class="big">🧺</div><div class="h">Make your first list</div><div class="p">Lists keep each trip separate. Pick a starter or name your own.</div></div>
+        <div class="tpl"><span style="font-size:18px">🛒</span><div>Groceries<small>Weekly essentials</small></div><span class="add">+ Create</span></div>
+        <div class="tpl"><span style="font-size:18px">📦</span><div>Monthly stock<small>Restart it each month</small></div><span class="add">+ Create</span></div>
+        <div class="tpl"><span style="font-size:18px">💊</span><div>Medicines</div><span class="add">+ Create</span></div>
+        <div class="tpl"><span style="font-size:18px">🎉</span><div>Party / occasion</div><span class="add">+ Create</span></div>
+        <div class="addbar">Name your own list… <span class="go" style="margin-left:auto">＋</span></div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L7 · Empty state</span>Only seen on a fresh install. Your existing data never lands here, because your current groups become lists on upgrade (see section D). Starters create an empty list with that name and icon, nothing else.</div></div>
+
+    <!-- L8 item editor List field -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">🛒 Groceries</div><div class="subt">5 to buy · 2 done</div></div></div><div class="hic">📤 ⋮</div></div></div>
+      <div class="body">
+        <div class="dim"></div>
+        <div class="sheet"><div class="handle"></div>
+          <div class="sht">Edit item</div>
+          <div class="field"><span class="lbl">Item</span>Basmati rice</div>
+          <div style="display:flex;gap:6px"><div class="field" style="flex:1"><span class="lbl">Qty</span>5</div><div class="field" style="flex:1"><span class="lbl">Unit</span>kg</div><div class="field" style="flex:1.3"><span class="lbl">Unit price</span>₹79</div></div>
+          <div class="field focus"><span class="lbl">List</span>🛒 Groceries <span style="float:right;color:#9A9AAC">▾</span></div>
+          <div style="border:1px solid #C9C9D6;border-radius:10px;overflow:hidden;font-size:11px;margin-top:-4px">
+            <div style="padding:6px 10px;background:#E0F5EE;color:#0B6E4F;font-weight:700">🛒 Groceries</div>
+            <div style="padding:6px 10px;border-top:1px solid #EEE">📦 Monthly stock</div>
+            <div style="padding:6px 10px;border-top:1px solid #EEE">🎁 Riya's birthday</div>
+            <div style="padding:6px 10px;border-top:1px solid #EEE;color:#0E9F6E;font-weight:700">＋ New list…</div></div>
+          <div class="field"><span class="lbl">Shop</span>D-Mart – Kalyan</div>
+          <div class="abtn"><div class="cancel" style="color:#D32F2F;border-color:#F2B8B5">Delete</div><div class="save">Save</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap"><span class="ct">L8 · Moving an item to another list</span>The item editor's <b>Group</b> field is renamed <b>List</b> in Shop mode and becomes a picker with "New list…" at the bottom. Saving with a different list moves the card, with a toast "Moved to 📦 Monthly stock · Undo".<br><span class="fl">⚑ label "Group" → "List" in Shop mode</span></div></div>
+  </div>
+
+  <h2>C · Existing features that must keep working</h2>
+  <div class="grid">
+
+    <!-- L9 Buy Now across lists -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="banner">📍 <div><b>At D-Mart – Kalyan</b><br>5 items across 2 lists</div><span class="x">Open</span></div>
+        <div class="gh"><span>🛒</span>Groceries<span class="gcount">3 here</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Milk · 2 L</div></div><span class="price">₹108</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Eggs · 12</div></div><span class="price">₹84</span></div>
+        <div class="irow done"><div class="cb on">✓</div><div class="gr"><div class="t">Basmati rice · 5 kg</div></div><span class="price">₹395</span></div>
+        <div class="gh"><span>📦</span>Monthly stock<span class="gcount">2 here</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Surf Excel · 2 kg</div></div><span class="price">₹440</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Toothpaste · 2</div></div><span class="price">₹190</span></div>
+                <div class="banner" style="margin-top:auto;margin-bottom:8px;justify-content:center">Hide Buy Now ✕</div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L9 · Buy Now (N38) cuts across lists</span>When a shop geofence fires, a banner sits on top of the Lists screen. <b>Open</b> shows every to-buy item for that shop from <b>all</b> lists, grouped by list. Ticking works as today. The arrival notification's "Open list" lands here.</div></div>
+
+    <!-- L10 settings -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">Buy ⚙</div><div class="subt">Buy tab settings</div></div></div></div></div>
+      <div class="body">
+        <div class="acc"><div class="ah">🗂 Lists</div>
+          <div class="srow"><div class="l">Buy tab opens on<small>Lists (new) or one flat list (classic)</small></div><span class="val">Lists ›</span></div>
+          <div class="srow"><div class="l">Reopen last list<small>Skip the Lists screen when you come back</small></div><div class="tri"><span>Inherit</span><span>On</span><span class="on">Off</span></div></div>
+          <div class="srow"><div class="l">Show Unsorted card</div><span class="switch"></span></div>
+          <div class="srow"><div class="l">Card shows estimated total</div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+          <div class="srow"><div class="l">Warn on duplicates across lists</div><span class="switch"></span></div>
+          <div class="srow"><div class="l">Default list for share-in / widget</div><span class="val">Groceries ›</span></div>
+        </div>
+        <div class="acc"><div class="ah">🛒 Inside a list</div>
+          <div class="srow"><div class="l">Group items by</div><span class="val">Shop ›</span></div>
+          <div class="srow"><div class="l">Show price per item</div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+        </div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L10 · Settings, per your standing rule</span>Global defaults live in Settings → Buy list; the Buy ⚙ page overrides with the existing Inherit / On / Off tri-state. <b>Buy tab opens on: Classic</b> gives back today's flat view, so nothing is taken away.</div></div>
+
+    <!-- L11 dark -->
+    <div class="unit"><div class="phone dk">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="chips"><span class="fchip on">Recent</span><span class="fchip">A–Z</span><span class="fchip">Custom</span></div>
+        <div class="lcard"><div class="lico" style="background:#16352A">🛒</div><div class="lmid"><div class="lname">Groceries <span style="font-size:10px">📌</span></div><div class="lsub">5 to buy · 2 done · updated 2 h ago</div><div class="bar"><div style="width:29%"></div></div><div class="spills"><span class="sp">D-Mart – Kalyan</span></div></div><div class="lright"><span class="cnt">5</span><span class="dots">⋮</span></div></div>
+        <div class="lcard"><div class="lico" style="background:#3A2A18">📦</div><div class="lmid"><div class="lname">Monthly stock</div><div class="lsub">4 to buy · 8 done · updated yesterday</div><div class="bar"><div style="width:67%"></div></div><div class="spills"><span class="sp">Reliance Smart</span></div></div><div class="lright"><span class="cnt">4</span><span class="dots">⋮</span></div></div>
+        <div class="lcard"><div class="lico" style="background:#2A2740">🎁</div><div class="lmid"><div class="lname">Riya's birthday</div><div class="lsub">3 to buy · 0 done</div><div class="bar"><div style="width:0%"></div></div></div><div class="lright"><span class="cnt">3</span><span class="dots">⋮</span></div></div>
+        <div class="addbar">New list… <span class="go" style="margin-left:auto">＋</span></div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L11 · Dark theme</span>List cards take their colours from the existing Palette tokens (SurfaceCard, GreenSoft, LearnSoft, TasksSoft), so the N45 dark mode covers the new screen with no per-screen colours.</div></div>
+
+    <!-- L12 Restart toast -->
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">📦 Monthly stock</div><div class="subt">12 to buy · 0 done</div></div></div><div class="hic">📤 ⋮</div></div>
+        <div class="seg3"><div class="on">To buy · 12</div><div>Done · 0</div></div></div>
+      <div class="body">
+        <div class="chips"><span class="fchip">By shop</span><span class="fchip on">By category</span><span class="fchip">None</span></div>
+        <div class="gh"><span>🧼</span>Cleaning<span class="gcount">3 items</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Surf Excel · 2 kg</div><div class="s">last ₹440 at Reliance Smart</div></div></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Harpic · 2</div><div class="s">last ₹198</div></div></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Vim bar · 4</div><div class="s">last ₹80</div></div></div>
+        <div class="gh"><span>🌾</span>Staples<span class="gcount">4 items</span></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Atta · 10 kg</div><div class="s">last ₹455</div></div></div>
+        <div class="irow"><div class="cb"></div><div class="gr"><div class="t">Sugar · 2 kg</div><div class="s">last ₹92</div></div></div>
+        <div class="toast">12 items back on the list<b>UNDO</b></div>
+      </div>
+      <div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">L12 · Restart list for repeat trips</span>After "Restart list", every done item returns to To buy with quantity, unit and last price kept. The lapse cycle (auto-return after N days) keeps working per item as today; Restart is the manual, whole-list version.</div></div>
+  </div>
+
+
+  <h2>G · Sharing a list · round 2 (your request 29-Sep)</h2>
+  <p class="meta">Two icon buttons in every list's header: <b>Share</b> (opens a preview with options) and a dedicated <b>WhatsApp</b> icon (one tap, straight into WhatsApp). Both produce your exact text format.</p>
+  <div class="code"><span class="c-h">List_Name:-</span>
+
+1. Item1 - Quantity / Type - <span class="c-u">Urgent</span> (optional) - <span class="c-b">Bought</span> (optional)
+2. Item2 - Quantity / Type - <span class="c-u">Urgent</span> (optional) - <span class="c-b">Bought</span> (optional)
+3. ...</div>
+  <div class="grid">
+
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div><div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">🛒 Groceries</div><div class="subt">5 to buy · 2 done</div></div></div><div class="hic r2"><span class="ib hot"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="18" cy="5" r="2.6" fill="#fff"/><circle cx="6" cy="12" r="2.6" fill="#fff"/><circle cx="18" cy="19" r="2.6" fill="#fff"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></svg></span><span class="ib wa hot"><svg viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="#fff" stroke-width="2"/><path d="M8.6 7.6c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.6.8c-.1.2-.2.3 0 .6.5.9 1.6 2 2.7 2.5.3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .6-.3 1.3-.8 1.6-.6.4-1.5.6-2.6.2-2.3-.8-4.3-2.8-5.1-4.6-.6-1.2-.4-2.3 0-3z" fill="#fff"/></svg></span><span style="font-size:15px">⋮</span></div></div><div class="seg3"><div class="on">To buy · 5</div><div>Done · 2</div></div></div>
+      <div class="body">
+        <span class="tip a" style="top:-4px;right:56px">Share icon</span><span class="tip b" style="top:22px;right:4px;background:#1B7F46">WhatsApp icon</span>
+        <div style="height:34px"></div>
+        <div class="chips"><span class="fchip on">By shop</span><span class="fchip">By category</span><span class="fchip">None</span></div>
+<div class="gh"><span>🏬</span>D-Mart – Kalyan<span class="gcount">3 items</span></div>
+<div class="irow"><div class="cb"></div><div class="gr"><div class="t">Milk · 2 L <span class="sp" style="background:#FBE2E2;color:#C62828">URGENT</span></div><div class="s">Dairy</div></div><span class="price">₹108</span></div>
+<div class="irow"><div class="cb"></div><div class="gr"><div class="t">Eggs · 12 pcs</div><div class="s">Dairy</div></div><span class="price">₹84</span></div>
+<div class="irow"><div class="cb"></div><div class="gr"><div class="t">Basmati rice · 5 kg</div><div class="s">Staples</div></div><span class="price">₹395</span></div>
+<div class="irow"><div class="cb"></div><div class="gr"><div class="t">Bread · 1 pack <span class="sp" style="background:#FBE2E2;color:#C62828">URGENT</span></div><div class="s">Bakery</div></div><span class="price">₹45</span></div>
+<div class="irow"><div class="cb"></div><div class="gr"><div class="t">Coriander · 1 bunch</div><div class="s">Vegetables</div></div><span class="price">—</span></div>
+        <div class="addbar">Add to Groceries… <span class="mic" style="margin-left:auto">🎤</span><span class="go">＋</span></div>
+      </div><div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">S1 · Two icons in the list header</span>The old 📤 emoji becomes a proper <b>Share</b> icon, and a round green <b>WhatsApp</b> icon sits beside it, before ⋮. Both share only <b>this</b> list. Personal (PIN-locked) items are left out while locked, and prices are never shared.<br><span class="fl">⚑ header gains one icon</span></div></div>
+
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div><div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">🛒 Groceries</div><div class="subt">5 to buy · 2 done</div></div></div><div class="hic r2"><span class="ib "><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="18" cy="5" r="2.6" fill="#fff"/><circle cx="6" cy="12" r="2.6" fill="#fff"/><circle cx="18" cy="19" r="2.6" fill="#fff"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></svg></span><span class="ib wa "><svg viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="#fff" stroke-width="2"/><path d="M8.6 7.6c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.6.8c-.1.2-.2.3 0 .6.5.9 1.6 2 2.7 2.5.3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .6-.3 1.3-.8 1.6-.6.4-1.5.6-2.6.2-2.3-.8-4.3-2.8-5.1-4.6-.6-1.2-.4-2.3 0-3z" fill="#fff"/></svg></span><span style="font-size:15px">⋮</span></div></div><div class="seg3"><div class="on">To buy · 5</div><div>Done · 2</div></div></div>
+      <div class="body">
+        <div class="dim"></div>
+        <div class="sheet"><div class="handle"></div>
+          <div style="display:flex;align-items:center"><div class="sht">Share “Groceries”</div><span style="margin-left:auto;font-size:9.5px;color:#6B6B80">7 lines</span></div>
+          <div class="pv">Groceries:-
+
+1. Milk - 2 / L - <span class="u">Urgent</span>
+2. Eggs - 12 / pcs
+3. Basmati rice - 5 / kg
+4. Bread - 1 / pack - <span class="u">Urgent</span>
+5. Coriander - 1 / bunch
+6. Onions - 1 / kg - <span class="bt">Bought</span>
+7. Potatoes - 2 / kg - <span class="bt">Bought</span></div>
+          <div class="srow"><div class="l">Include bought items</div><span class="switch"></span></div>
+          <div class="srow"><div class="l">Show “Urgent” tag</div><span class="switch"></span></div>
+          <div class="srow"><div class="l">Show “Bought” status</div><span class="switch"></span></div>
+          <div class="srow"><div class="l">Show quantity / type</div><span class="switch"></span></div>
+          <div class="wabtns"><div class="g"><svg viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="#fff" stroke-width="2"/><path d="M8.6 7.6c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.6.8c-.1.2-.2.3 0 .6.5.9 1.6 2 2.7 2.5.3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .6-.3 1.3-.8 1.6-.6.4-1.5.6-2.6.2-2.3-.8-4.3-2.8-5.1-4.6-.6-1.2-.4-2.3 0-3z" fill="#fff"/></svg> WhatsApp</div><div><svg viewBox="0 0 24 24" fill="none" stroke="#44445A" stroke-width="2.2" stroke-linecap="round"><circle cx="18" cy="5" r="2.6" fill="#44445A"/><circle cx="6" cy="12" r="2.6" fill="#44445A"/><circle cx="18" cy="19" r="2.6" fill="#44445A"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></svg> Share…</div><div>⧉ Copy</div></div>
+        </div>
+      </div><div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">S2 · Share icon → preview sheet</span>The preview shows the exact text that will be sent and updates live as you flip the four switches. From here you can send to WhatsApp, to any other app (Share…), or copy the text. The switches start from your Settings defaults (S6).</div></div>
+
+    <div class="unit"><div class="phone">
+      <div class="status" style="color:#fff"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="whdr" style="padding-left:14px"><span style="font-size:17px">←</span><div><div class="nm">Send to…</div><div class="st">WhatsApp · text from Remindly</div></div></div>
+      <div class="pick">
+        <div class="lbl2">Frequently contacted</div>
+        <div class="row"><span class="av">F</span>Family 🏠<span class="ck on"></span></div>
+        <div class="row"><span class="av">M</span>Maa<span class="ck"></span></div>
+        <div class="row"><span class="av">R</span>Riya<span class="ck"></span></div>
+        <div class="lbl2">Recent chats</div>
+        <div class="row"><span class="av">F</span>Flat 4B – Society<span class="ck"></span></div>
+        <div class="row"><span class="av">A</span>Amit (office)<span class="ck"></span></div>
+        <div style="margin-top:auto;padding:10px 12px;background:#F4F4F4;font-size:10.5px;color:#333;display:flex;align-items:center">Family 🏠<span style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:#1F6F5C;color:#fff;display:flex;align-items:center;justify-content:center">➤</span></div>
+      </div>
+    </div>
+    <div class="cap"><span class="ct">S3 · WhatsApp icon → straight into WhatsApp</span>One tap and WhatsApp opens its own "Send to…" chat picker with the text already filled in, with no Remindly sheet in between. It uses your default switches from S6. <b>Long-press</b> the icon to open the S2 preview first.</div></div>
+
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:42</span><span>▲ ▮▮ ▮</span></div>
+      <div class="wchat">
+        <div class="whdr"><span style="font-size:17px">←</span><span class="av">F</span><div><div class="nm">Family 🏠</div><div class="st">Maa, Riya, You</div></div></div>
+        <div class="wbody"><div class="bub">Groceries:-
+
+1. Milk - 2 / L - Urgent
+2. Eggs - 12 / pcs
+3. Basmati rice - 5 / kg
+4. Bread - 1 / pack - Urgent
+5. Coriander - 1 / bunch
+6. Onions - 1 / kg - Bought
+7. Potatoes - 2 / kg - Bought<span class="tm">9:42 ✓✓</span></div></div>
+        <div class="winput"><span class="f">Message</span><span class="s">🎤</span></div>
+      </div>
+    </div>
+    <div class="cap"><span class="ct">S4 · How it reads in the chat</span>Plain text, numbered, one item per line, in the order the list shows. Bought items come last. No emoji or markdown, so the message looks the same on every phone and copies cleanly.</div></div>
+
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">☰</span><div><div class="app">Buy</div><div class="subt">4 lists · 13 to buy</div></div></div><div class="hic">🔍 ⚙</div></div></div>
+      <div class="body">
+        <div class="lcard sel" style="position:relative;z-index:4"><div class="lico" style="background:#E0F5EE">🛒</div><div class="lmid"><div class="lname">Groceries</div><div class="lsub">5 to buy · 2 done</div></div><div class="lright"><span class="cnt">5</span></div></div>
+        <div class="dim"></div>
+        <div class="menu" style="top:74px">
+          <div class="mt">🛒 Groceries</div><div class="ms">5 to buy · 2 done</div>
+          <div class="mi" style="display:flex;align-items:center;gap:8px"><span class="ib wa" style="width:22px;height:22px;box-shadow:none"><svg viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="#fff" stroke-width="2"/><path d="M8.6 7.6c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.6.8c-.1.2-.2.3 0 .6.5.9 1.6 2 2.7 2.5.3.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .6-.3 1.3-.8 1.6-.6.4-1.5.6-2.6.2-2.3-.8-4.3-2.8-5.1-4.6-.6-1.2-.4-2.3 0-3z" fill="#fff"/></svg></span><b style="color:#1B7F46">Send to WhatsApp</b></div>
+          <div class="mi" style="display:flex;align-items:center;gap:8px"><span class="ib" style="width:22px;height:22px;background:#EFEFF5"><svg viewBox="0 0 24 24" fill="none" stroke="#44445A" stroke-width="2.2" stroke-linecap="round"><circle cx="18" cy="5" r="2.6" fill="#44445A"/><circle cx="6" cy="12" r="2.6" fill="#44445A"/><circle cx="18" cy="19" r="2.6" fill="#44445A"/><path d="M8.3 10.8l7.4-4.4M8.3 13.2l7.4 4.4"/></svg></span>Share…</div>
+          <div class="mi">📌 Pin to top</div>
+          <div class="mi">✏️ Rename &amp; icon</div>
+          <div class="mi">📑 Duplicate list</div>
+          <div class="mi">🔁 Restart list</div>
+          <div class="mi redx">🗑 Delete list…</div>
+        </div>
+      </div><div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">S5 · Share without opening the list</span>The list card's long-press / ⋮ menu (L5) gets the same two actions at the top, so you can send Groceries to the family group straight from the Lists screen.</div></div>
+
+    <div class="unit"><div class="phone">
+      <div class="status"><span>9:41</span><span>▲ ▮▮ ▮</span></div>
+      <div class="hdr"><div class="hrow"><div class="hl"><span class="ham">←</span><div><div class="app">Buy ⚙</div><div class="subt">Buy tab settings</div></div></div></div></div>
+      <div class="body">
+        <div class="acc"><div class="ah">📤 Sharing</div>
+          <div class="srow"><div class="l">WhatsApp icon in list header</div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+          <div class="srow"><div class="l">WhatsApp app<small>Used when both are installed</small></div><span class="val">WhatsApp ›</span></div>
+          <div class="srow"><div class="l">Include bought items</div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+          <div class="srow"><div class="l">Show “Urgent” tag<small>For items with priority Urgent</small></div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+          <div class="srow"><div class="l">Show “Bought” status</div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+          <div class="srow"><div class="l">Show quantity / type</div><div class="tri"><span class="on">Inherit</span><span>On</span><span>Off</span></div></div>
+          <div class="srow"><div class="l">Heading suffix<small>Text after the list name</small></div><span class="val">“:-” ›</span></div>
+        </div>
+        <div class="pv" style="font-size:9px">Groceries:-
+
+1. Milk - 2 / L - <span class="u">Urgent</span>
+2. Eggs - 12 / pcs</div>
+      </div><div class="nav"><div class="nitem on"><div class="bg"><div class="nico">🛒</div></div><div>Buy</div></div><div class="nitem"><div class="nico">🏬</div><div>Shops</div></div><div class="nitem"><div class="nico">📦</div><div>Products</div></div><div class="nitem"><div class="nico">⚙</div><div>Settings</div></div></div>
+    </div>
+    <div class="cap"><span class="ct">S6 · Settings</span>Global defaults in Settings → Sharing, with Inherit / On / Off overrides on the Buy settings page, per your standing rule. The mini preview under the switches shows the result. "WhatsApp app" chooses between WhatsApp and WhatsApp Business when a phone has both.</div></div>
+  </div>
+
+  <div class="tw"><table>
+    <tr><th class="n">SrNo.</th><th>Part of a line</th><th>Rule</th><th>Example</th><th>Reasoning</th></tr>
+    <tr><td class="n">1</td><td>Heading</td><td>List name + “:-”, then one blank line</td><td class="mono">Groceries:-</td><td>Your format, exactly.</td></tr>
+    <tr><td class="n">2</td><td>Number</td><td>1, 2, 3… in the order the list shows; bought items last</td><td class="mono">3. Basmati rice</td><td>Numbers let the family say "got 3 and 5".</td></tr>
+    <tr><td class="n">3</td><td>Quantity / Type</td><td>qty + “ / ” + unit. No unit → qty only. No qty → segment dropped</td><td class="mono">- 5 / kg · - 3 · (none)</td><td>No empty “ /  ” fragments in the message.</td></tr>
+    <tr><td class="n">4</td><td>Urgent</td><td>“- Urgent” only when the item's priority is <b>Urgent</b></td><td class="mono">- Urgent</td><td>Remindly already has an Urgent priority; see F8 for High.</td></tr>
+    <tr><td class="n">5</td><td>Bought status</td><td>“- Bought” on bought items; to-buy items show nothing</td><td class="mono">- Bought</td><td>Keeps pending lines short; see F9.</td></tr>
+    <tr><td class="n">6</td><td>Never included</td><td>Prices, shop, notes, locked Personal items</td><td>—</td><td>Private data stays private.</td></tr>
+    <tr><td class="n">7</td><td>WhatsApp missing</td><td>Falls back to the Android share sheet with a toast</td><td>“WhatsApp not installed — choose an app”</td><td>Same fallback N45 already uses.</td></tr>
+  </table></div>
+
+  <h2>D · Behaviour changes (⚑ flagged before any build)</h2>
+  <div class="tw"><table>
+    <tr><th class="n">SrNo.</th><th>What changes</th><th>Today</th><th>After N48</th><th>Reasoning</th></tr>
+    <tr><td class="n">1</td><td>Buy tab landing screen</td><td>Flat item cards</td><td>Lists screen (L1)</td><td>Your request. <b>Classic</b> setting restores today's view.</td></tr>
+    <tr><td class="n">2</td><td>Bottom quick-add bar on Buy</td><td>Adds an item</td><td>On Lists: creates a list. Inside a list: adds an item</td><td>An item must have a list to land in.</td></tr>
+    <tr><td class="n">3</td><td>"Group" field in Shop item editor</td><td>Free-text group</td><td>Renamed <b>List</b>, picker with "New list…"</td><td>One concept, one name. Task/Learn groups stay as they are.</td></tr>
+    <tr><td class="n">4</td><td>"By group" grouping in Buy</td><td>By date / By group / By shop</td><td>Inside a list: By shop / By category / None</td><td>Every item on the screen is already in the same list.</td></tr>
+    <tr><td class="n">5</td><td>N45 "Default group for new items"</td><td>Pre-fills group on quick add</td><td>Becomes "Default list for share-in / widget"</td><td>Inside a list the list is known; the default only matters for entry points that are not a list.</td></tr>
+    <tr><td class="n">6</td><td>N45 mapping rule "no parallel lists entity"</td><td>Lists = Groups (names on items)</td><td>A small list registry is added (section E)</td><td><span class="red">A group only exists while an item carries it, so an empty list cannot exist today.</span> Lists-first needs empty lists.</td></tr>
+    <tr><td class="n">7</td><td>Buy Now (N38)</td><td>View filter over all Active items</td><td>Same filter, grouped by list, opened from a banner on L1</td><td>Buy Now is per shop, not per list, so it must cut across lists.</td></tr>
+  </table></div>
+
+  <h2>E · Data model — two options</h2>
+  <div class="tw"><table>
+    <tr><th class="n">SrNo.</th><th>Option</th><th>How it works</th><th>Pros</th><th>Cons</th></tr>
+    <tr class="rec"><td class="n">1</td><td><span class="star">★ A · Registry over existing groups</span></td><td>New synced record <span class="mono">ShopList(id, name, icon, pinned, order, usualShopId, shoppingDay, personal, createdAt, updatedAt, deletedAt)</span>. Items keep <span class="mono">group</span> and gain <span class="mono">listId: Long?</span>; <span class="mono">group</span> stays the display fallback.</td><td>Empty lists possible; rename is one record edit; merge-stamped sync like Shop/City/Chain; old backups import cleanly</td><td>Schema bump 42 → 43; one migration step; <span class="mono">groupIcons</span> map moves into the record</td></tr>
+    <tr><td class="n">2</td><td>B · Keep names only</td><td>Add <span class="mono">shopLists: List&lt;String&gt;</span> to settings; items keep using the group name</td><td>Smallest change</td><td>Rename rewrites every item; two devices renaming the same list conflict; no room for pin, day or shop</td></tr>
+  </table></div>
+
+  <div class="tw"><table>
+    <tr><th class="n">SrNo.</th><th>Upgrade step (runs once, idempotent)</th><th>Result</th></tr>
+    <tr><td class="n">1</td><td>Every distinct Shop-item group name (trimmed, case-insensitive)</td><td>Becomes a ShopList with its N45 icon; items get its <span class="mono">listId</span></td></tr>
+    <tr><td class="n">2</td><td>Shop items with no group</td><td>Stay without a list and appear in the <b>Unsorted</b> card</td></tr>
+    <tr><td class="n">3</td><td>N45 <span class="mono">shopDefaultGroup</span></td><td>Carried over as the default list for share-in / widget</td></tr>
+    <tr><td class="n">4</td><td>Backups and Drive sync from 2.10 or older</td><td>Import as today, then step 1 runs again; nothing is lost</td></tr>
+  </table></div>
+
+  <h2>F · Questions for you (★ = my default)</h2>
+  <div class="tw"><table>
+    <tr><th class="n">SrNo.</th><th>Question</th><th>Options</th><th>Reasoning for ★</th></tr>
+    <tr><td class="n">1</td><td>Data model</td><td><span class="star">★ A registry</span> · B names only</td><td>Only A allows empty lists, safe renames and pin / day / shop.</td></tr>
+    <tr><td class="n">2</td><td>Items with no list after upgrade</td><td><span class="star">★ Unsorted card</span> · auto-create a "My list" · force a choice on first open</td><td>Nothing moves without you deciding; the card disappears once empty.</td></tr>
+    <tr><td class="n">3</td><td>Keep a "Classic" flat view?</td><td><span class="star">★ Yes, as a setting (default Lists)</span> · No</td><td>A way back costs little and matches your per-tab settings rule.</td></tr>
+    <tr><td class="n">4</td><td>Can one item be in two lists?</td><td><span class="star">★ No, one list per item, with a duplicate warning (L4)</span> · Yes</td><td>Ticking in one list would otherwise need to tick the other; one list keeps price history clean.</td></tr>
+    <tr><td class="n">5</td><td>Shopping day reminder per list (L2)</td><td><span class="star">★ Include</span> · Later</td><td>Reuses the existing alarm engine; one notification that morning.</td></tr>
+    <tr><td class="n">6</td><td>Restart list + Merge (L5, L12)</td><td><span class="star">★ Include both</span> · Restart only · Neither</td><td>Restart makes monthly lists practical; Merge cleans up after the migration.</td></tr>
+    <tr><td class="n">7</td><td>WhatsApp icon: one tap sends directly (S3)?</td><td><span class="star">★ Yes; long-press opens preview</span> · Always show preview first</td><td>You asked for "directly"; the preview is still one long-press away.</td></tr>
+    <tr><td class="n">8</td><td>Which priorities count as “Urgent”?</td><td><span class="star">★ Urgent only</span> · High + Urgent</td><td>Matches the word in the message; High stays quiet.</td></tr>
+    <tr><td class="n">9</td><td>Bought status on to-buy lines</td><td><span class="star">★ Nothing</span> · “- To buy”</td><td>Only bought lines need a marker.</td></tr>
+    <tr><td class="n">10</td><td>Order of lines</td><td><span class="star">★ Screen order, bought last</span> · Urgent first · A–Z</td><td>What you see is what they get.</td></tr>
+    <tr><td class="n">11</td><td>WhatsApp icon also on each list card (L1)?</td><td><span class="star">★ No, menu only (S5)</span> · Yes</td><td>Keeps list cards uncluttered.</td></tr>
+  </table></div>
+
+  <h2>Summary</h2>
+  <ul class="sum">
+    <li>The Buy tab opens on <b>Lists</b>; tapping a list shows only its items, and anything added there belongs to that list.</li>
+    <li>Create (L2), options (L5), delete with a safe default (L6), move items between lists (L8), and restart for repeat trips (L12).</li>
+    <li>Buy Now, checkout calculator, cheapest-shop hints, gestures, Personal PIN and dark mode all keep working, scoped to the list.</li>
+    <li><span class="red">This reverses the N45 rule "no parallel lists entity"</span>, because empty lists are impossible when a list is just a name on an item. Recommended: a small synced ShopList registry.</li>
+    <li>Your current groups become lists automatically on upgrade; ungrouped items wait in Unsorted.</li>
+    <li>Round 2: every list has a <b>Share</b> icon (preview + options) and a dedicated <b>WhatsApp</b> icon (one tap), both sending <span class="mono">List_Name:-</span> + numbered <span class="mono">Item - Qty / Type - Urgent - Bought</span> lines.</li>
+    <li>Nothing is built. Reply with changes or answers to F1–F11.</li>
+  </ul>
+</div>
+
+</body></html>

@@ -68,7 +68,75 @@ Any item that cannot honour the rule states WHY in its entry.
 
 ## WAITING QUEUE
 
-NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), SPIKE-2 (PARKED — silent). N9 + N6pt2 SHIPPED as 2.10.
+NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), N48 (design — F1–F11 answers pending), SPIKE-2 (PARKED — silent). N9 + N6pt2 SHIPPED as 2.10.
+
+### N48 — Buy tab: LISTS FIRST, then items inside a list — QUEUED at design stage
+### Krishna 29-Sep-2026: "The shopping tab is directly adding the item card decks to directly purchase,
+### but I want to change that first Lists to be added and then inside that list items to be add"
+### (design/n48-lists-first-design-v1.html, rounds 1–2) — "Add to queue" 29-Sep-2026 (×2). NO BUILD until trigger.
+RULE (his words): Lists are created first; items are added INSIDE a list. The Buy tab no longer opens on
+item cards.
+DESIGN (12 frames): L1 Buy opens on list cards (emoji icon, to-buy count, progress bar, shop pill(s),
+  ≈₹ total from last prices, optional due day; pinned on top; sort Recent / A–Z / Custom-drag; dashed
+  "Unsorted" card for list-less items, auto-hides when empty; bottom bar = "New list…"). L2 New-list sheet
+  (name required; icon = N45 emoji picker; usual shop; shopping day; Private/Personal PIN) → "Create & add
+  items" opens the list. L3 inside a list: ← back (system Back same), To buy | Done, grouping By shop /
+  By category / None, add bar "Add to <list>…" + mic; every existing behaviour (gestures, checkout
+  calculator, cheapest-shop hint, lapse cycle, Personal PIN) scoped to the list. L4 add-item: N45
+  suggestions + "Recently bought in this list" first + duplicate warning when the item sits in another
+  list. L5 list menu (long-press card / ⋮): Pin · Rename & icon · Share · Duplicate · Restart list (done →
+  to buy, qty/unit/price kept) · Mark all bought · Merge into… · Delete…. L6 delete: default = keep items →
+  Unsorted; or move to another list; or delete items too (soft, Undo 5 s). L7 fresh-install empty state
+  with starter lists. L8 item editor: "Group" → "List" picker + "New list…"; move = toast with Undo.
+  L9 Buy Now (N38) = banner on Lists screen, content cuts across ALL lists grouped by list; "Open list"
+  from N37 notification lands here. L10 settings. L11 dark via Palette tokens only. L12 Restart + Undo.
+⚑ BEHAVIOUR CHANGES (announced before build, per 15-Aug rule):
+  1 Buy lands on Lists, not item cards ("Classic" setting restores the flat view).
+  2 Buy bottom bar on the Lists screen creates a LIST, not an item.
+  3 Shop-mode "Group" label → "List" (Tasks/Learn groups unchanged).
+  4 "By group" grouping removed INSIDE a list (By shop / By category / None).
+  5 N45 shopDefaultGroup → "Default list for share-in / widget".
+  6 REVERSES the N45 mapping rule "no parallel lists entity": a group exists only while an item carries
+    it, so an EMPTY list is impossible today — lists-first needs one.
+  7 Buy Now grouped by list, opened from a banner on L1.
+SETTINGS (global in Settings → Buy list + per-tab Buy ⚙ via the existing tri() Inherit/On/Off):
+  Buy tab opens on Lists|Classic · Reopen last list · Show Unsorted card · Card shows ≈ total ·
+  Warn on duplicates across lists · Default list for share-in/widget · Inside a list: group by, price/item.
+DATA (★ option A, pending Krishna's F1): new merge-stamped synced record
+  ShopList(id, name, icon, pinned, order, usualShopId?, shoppingDay?, personal, createdAt, updatedAt,
+  deletedAt); Item += listId: Long? (group stays the display fallback); settings.groupIcons for Shop
+  groups move into ShopList.icon. Schema 42 → 43 (or the current schema + 1 at build time).
+MIGRATION (once, idempotent; re-runs after importing ≤2.10 backups/Drive data): each distinct Shop-item
+  group name (trimmed, case-insensitive) → ShopList with its N45 icon, items stamped listId; no-group
+  items stay list-less → Unsorted; shopDefaultGroup carried over.
+QUESTIONS (★ default — answers still pending):
+  F1 data model — ★ A registry record · B names in settings.
+  F2 list-less items after upgrade — ★ Unsorted card · auto "My list" · force a choice.
+  F3 keep Classic flat view — ★ yes, as a setting (default Lists).
+  F4 one item in two lists — ★ no, one list + duplicate warning.
+  F5 shopping-day reminder per list — ★ include (existing alarm engine, one notification that morning).
+  F6 Restart list + Merge — ★ include both.
+COMPANIONS (standing rules): class sweep of every `group` consumer on Shop items (grouping, share,
+  N43 complete-all, N45 menu, default group, widget, export/import, sync merge) dispositioned in a table;
+  end-state tests (create list → add item → item.listId == list.id; delete list default → items in
+  Unsorted with price history intact; migration idempotent; Buy Now spans lists); negative control on
+  each; device checklist with the persistence quartet (act → verify → close/reopen → reboot).
+ROUND 2 — SHARING (Krishna 29-Sep-2026: "a icon button to share and a dedicated icon to share directly
+to WhatsApp"; format "List_Name:-" then "1. Item - Quantity / Type - Urgent(Optional) - Bought(Optional)")
+DESIGN (S1–S6): list header gets a Share icon (replaces the 📤 emoji) + a round green WhatsApp icon
+  before ⋮. S2 Share → preview sheet (live text, switches: include bought · Urgent tag · Bought status ·
+  qty/type; WhatsApp · Share… · Copy). S3 WhatsApp icon tap = ACTION_SEND setPackage straight into
+  WhatsApp's chat picker with the text (defaults from settings); long-press = S2 preview. S5 the same two
+  actions top the list-card menu. S6 settings, global + Buy ⚙ tri-state: WhatsApp icon on/off, WhatsApp
+  vs WhatsApp Business, the four switches, heading suffix (default ":-").
+FORMAT: "<name>:-", blank line, "N. <title>[ - <qty>[ / <unit>]][ - Urgent][ - Bought]"; no unit → qty
+  only; no qty → segment dropped; Urgent = priority URGENT; Bought only on bought lines; screen order,
+  bought last; never prices / shop / notes / locked Personal items. WhatsApp missing → system share
+  sheet + toast (N45 fallback). Replaces N45 groupShareText ("Shopping list – X" / "- item") for Shop
+  lists — ⚑ behaviour change to the shared text.
+QUESTIONS: F7 one-tap direct (★ yes, long-press = preview); F8 Urgent = ★ URGENT only / High+Urgent;
+  F9 to-buy marker ★ none / "- To buy"; F10 order ★ screen order, bought last; F11 WhatsApp icon on list
+  cards ★ no (menu only).
 
 ### INFRA — APK built on GitHub Actions — DONE 28-Sep-2026 (no app version change)
 ### Krishna 28-Sep-2026: "can you build the APK in GitHub action section?"
