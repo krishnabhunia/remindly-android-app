@@ -1,10 +1,10 @@
 {
-  "versionCode": 2010000,
-  "versionName": "2.10",
-  "apk": "Remindly-2.10.apk",
-  "apkUrl": "https://github.com/krishnabhunia/remindly-android-app/releases/download/v2.10/Remindly-2.10.apk",
-  "sha256": "7cc69d13075ff801e6de85f839a3ac99a9c64370b36e21e7a7858704a4045de3",
-  "sizeBytes": 16422897,
-  "notes": "Every permission is now optional, asked when you use it, and explained first. Before Android's question appears, Remindly says what the permission is for and what still works if you say no.",
-  "publishedAt": "2026-09-28"
+  "versionCode": 2011000,
+  "versionName": "2.11",
+  "apk": "Remindly-2.11.apk",
+  "apkUrl": "https://github.com/krishnabhunia/remindly-android-app/releases/download/v2.11/Remindly-2.11.apk",
+  "sha256": "0962465fa9d9f1b69ca488c742079c8e7436492e2a64ab584baa613575eafa9d",
+  "sizeBytes": 16530389,
+  "notes": "The Buy tab now opens on your Lists. Make a list first (Groceries, Monthly stock, a party…), then add items inside it. Your existing groups became lists automatically; items without a group wait in an \"Unsorted\" card until you move them.",
+  "publishedAt": "2026-09-29"
 }
