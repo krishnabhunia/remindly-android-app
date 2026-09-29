@@ -343,20 +343,57 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
             if (vis("api-keys")) SettingsSection("API keys", { Icon(Icons.Filled.Lock, null, tint = sectionTint("errlog")) },
                 expanded = openKey == "api-keys", onToggle = { toggleKey("api-keys") }) { ApiKeysSection() }
 
-            if (vis("sharing")) SettingsSection("Sharing", { Icon(Icons.Filled.Share, null, tint = ShopPal.accent) },
-                expanded = openKey == "sharing", onToggle = { toggleKey("sharing") }) {
-                // v2.9 (N45): defaults for the group share sheet.
-                SettingRowSwitch("Include completed items", "Ticked items appear with (✓)", settings.shareIncludeDone) { on -> SettingsStore.update { it.copy(shareIncludeDone = on) } }
-                SettingRowSwitch("Include quantities & shop", "e.g. “Milk 2 L · D-Mart”", settings.shareIncludeQty) { on -> SettingsStore.update { it.copy(shareIncludeQty = on) } }
-                Text("Default group for new items", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+            if (vis("b-lists")) SettingsSection("Lists", { Icon(Icons.Filled.ShoppingCart, null, tint = ShopPal.accent) },
+                expanded = openKey == "b-lists", onToggle = { toggleKey("b-lists") }) {
+                // v2.11 (N48): the Buy tab opens on Lists; Classic keeps the old flat view.
+                Text("Buy tab opens on", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(selected = settings.buyOpensOn != "CLASSIC", onClick = { SettingsStore.update { it.copy(buyOpensOn = "LISTS") } }, label = { Text("Lists") })
+                    FilterChip(selected = settings.buyOpensOn == "CLASSIC", onClick = { SettingsStore.update { it.copy(buyOpensOn = "CLASSIC") } }, label = { Text("Classic (one flat list)") })
+                }
+                SettingRowSwitch("Reopen last list", "Skip the Lists screen when you come back", settings.buyReopenLast) { on -> SettingsStore.update { it.copy(buyReopenLast = on) } }
+                SettingRowSwitch("Show Unsorted card", "Items without a list (hides itself when empty)", settings.buyShowUnsorted) { on -> SettingsStore.update { it.copy(buyShowUnsorted = on) } }
+                SettingRowSwitch("Card shows estimated total", "“≈ ₹” from prices and price memory", settings.buyCardTotal) { on -> SettingsStore.update { it.copy(buyCardTotal = on) } }
+                SettingRowSwitch("Warn on duplicates across lists", "“Already in Monthly stock” while adding", settings.buyDupWarn) { on -> SettingsStore.update { it.copy(buyDupWarn = on) } }
+                Text("Default list", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+                Text("Where items added outside a list go (Classic view, Buy Now)", style = MaterialTheme.typography.bodySmall, color = InkSubtle)
                 Row(Modifier.padding(top = 4.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = settings.shopDefaultGroup.isBlank(), onClick = { SettingsStore.update { it.copy(shopDefaultGroup = "") } }, label = { Text("None") })
-                    settings.shopGroups.forEach { g ->
-                        FilterChip(selected = settings.shopDefaultGroup == g, onClick = { SettingsStore.update { it.copy(shopDefaultGroup = g) } }, label = { Text((groupIconFor(g, settings)?.let { "$it " } ?: "") + g) })
+                    FilterChip(selected = settings.shopDefaultListId == null, onClick = { SettingsStore.update { mirrorListsIntoSettings(it.copy(shopDefaultListId = null)) } }, label = { Text("Unsorted") })
+                    liveLists(settings.shopLists).sortedBy { it.name.lowercase() }.forEach { l ->
+                        FilterChip(selected = settings.shopDefaultListId == l.id, onClick = { SettingsStore.update { mirrorListsIntoSettings(it.copy(shopDefaultListId = l.id)) } },
+                            label = { Text((l.icon?.let { "$it " } ?: "") + l.name) })
                     }
                 }
                 SettingRowSwitch("Voice input on quick add", "Mic button on the add bar", settings.shopVoiceAdd) { on -> SettingsStore.update { it.copy(shopVoiceAdd = on) } }
                 SettingRowSwitch("Suggestions from Products", "While typing an item", settings.shopSuggest) { on -> SettingsStore.update { it.copy(shopSuggest = on) } }
+            }
+            if (vis("sharing")) SettingsSection("Sharing a list", { Icon(Icons.Filled.Share, null, tint = ShopPal.accent) },
+                expanded = openKey == "sharing", onToggle = { toggleKey("sharing") }) {
+                // v2.11 (N48 S6): Krishna's format — "List_Name:-" then "1. Item - Qty / Type - Urgent - Bought".
+                SettingRowSwitch("WhatsApp icon in list header", "One tap sends · long-press previews", settings.shareWaIcon) { on -> SettingsStore.update { it.copy(shareWaIcon = on) } }
+                Text("WhatsApp app", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilterChip(selected = settings.shareWaApp != "BUSINESS", onClick = { SettingsStore.update { it.copy(shareWaApp = "WHATSAPP") } }, label = { Text("WhatsApp") })
+                    FilterChip(selected = settings.shareWaApp == "BUSINESS", onClick = { SettingsStore.update { it.copy(shareWaApp = "BUSINESS") } }, label = { Text("WhatsApp Business") })
+                }
+                SettingRowSwitch("Include bought items", "Listed last", settings.shareIncludeDone) { on -> SettingsStore.update { it.copy(shareIncludeDone = on) } }
+                SettingRowSwitch("Show “Urgent” tag", "For items with priority Urgent", settings.shareUrgentTag) { on -> SettingsStore.update { it.copy(shareUrgentTag = on) } }
+                SettingRowSwitch("Show “Bought” status", "On bought lines", settings.shareBoughtTag) { on -> SettingsStore.update { it.copy(shareBoughtTag = on) } }
+                SettingRowSwitch("Show quantity / type", "e.g. “2 / L”", settings.shareIncludeQty) { on -> SettingsStore.update { it.copy(shareIncludeQty = on) } }
+                Text("Heading suffix", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 6.dp))
+                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(":-", ":", "").forEach { sfx ->
+                        FilterChip(selected = settings.shareHeadingSuffix == sfx, onClick = { SettingsStore.update { it.copy(shareHeadingSuffix = sfx) } },
+                            label = { Text(if (sfx.isEmpty()) "None" else "“$sfx”") })
+                    }
+                }
+                val sample = listShareText("Groceries", listOf(
+                    Item(id = 1, tab = Tab.SHOP, title = "Milk", quantity = "2", unit = "L", priority = Priority.URGENT),
+                    Item(id = 2, tab = Tab.SHOP, title = "Eggs", quantity = "12", unit = "pcs"),
+                    Item(id = 3, tab = Tab.SHOP, title = "Onions", quantity = "1", unit = "kg", done = true)
+                ), listShareOptsOf(settings))
+                Text(sample, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, color = InkStrong,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp).background(SurfaceSubtle, androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).padding(10.dp))
             }
             if (vis("shop-buy")) SettingsSection("Buy list", { Icon(Icons.Filled.ShoppingCart, null, tint = ShopPal.accent) },
                 expanded = openKey == "shop-buy", onToggle = { toggleKey("shop-buy") }) {
@@ -881,37 +918,29 @@ fun SettingsScreen(filterKey: String? = null, embedded: Boolean = false) {
                             .forEach { Engine.addOrUpdate(context, it.copy(group = n)) }
                     })
             }
-            if (vis("s-groups")) SettingsSection("Shop Groups", { Icon(Icons.Filled.Folder, null, tint = sectionTint("groups")) },
+            if (vis("s-groups")) SettingsSection("Lists (order & names)", { Icon(Icons.Filled.Folder, null, tint = sectionTint("groups")) },
                 expanded = openKey == "groups", onToggle = { toggleKey("groups") }) {
-                // v1.15 item 16: aisle order — ↑/↓ arrows (recorded fallback from drag; same capability).
-                val ordered = settings.shopGroups.sortedWith(compareBy(
-                    { settings.shopGroupOrder.indexOf(it).let { i -> if (i < 0) Int.MAX_VALUE else i } }, { it.lowercase() }
-                ))
+                // v2.11 (N48): Shop groups ARE the Buy lists now — this editor works on the list records
+                // (order = the Lists screen's Custom order, which the Trip mode and Classic view also use).
+                val ordered = sortedLists(settings.shopLists, "CUSTOM") { 0L }
                 if (ordered.size > 1) {
-                    Text("Aisle Order (Trip Mode & Group View)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    ordered.forEachIndexed { idx, g ->
+                    Text("Order (Custom sort, Trip Mode & Classic view)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                    ordered.forEachIndexed { idx, l ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(g, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                            IconButton(enabled = idx > 0, onClick = {
-                                val l = ordered.toMutableList(); l.removeAt(idx); l.add(idx - 1, g)
-                                SettingsStore.update { it.copy(shopGroupOrder = l) }
-                            }) { Icon(Icons.Filled.KeyboardArrowUp, "Up") }
-                            IconButton(enabled = idx < ordered.size - 1, onClick = {
-                                val l = ordered.toMutableList(); l.removeAt(idx); l.add(idx + 1, g)
-                                SettingsStore.update { it.copy(shopGroupOrder = l) }
-                            }) { Icon(Icons.Filled.KeyboardArrowDown, "Down") }
+                            Text((l.icon?.let { "$it " } ?: "") + l.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                            IconButton(enabled = idx > 0, onClick = { ShopListStore.move(context, l, up = true) }) { Icon(Icons.Filled.KeyboardArrowUp, "Up") }
+                            IconButton(enabled = idx < ordered.size - 1, onClick = { ShopListStore.move(context, l, up = false) }) { Icon(Icons.Filled.KeyboardArrowDown, "Down") }
                         }
                     }
                     Spacer(Modifier.padding(3.dp))
                 }
-                GroupListEditor("Shop groups", settings.shopGroups,
-                    inUseCount = { g -> ItemStore.items.value.count { it.tab == Tab.SHOP && it.group == g } },
-                    onAdd = { g -> SettingsStore.update { it.copy(shopGroups = (it.shopGroups + g).distinct()) } },
-                    onDelete = { g -> SettingsStore.update { it.copy(shopGroups = it.shopGroups - g) } },
+                GroupListEditor("Lists", ordered.map { it.name },
+                    inUseCount = { g -> listNamed(settings.shopLists, g)?.let { ShopListStore.itemsOf(it.id).size } ?: 0 },
+                    onAdd = { g -> ShopListStore.create(context, g, null, null, null, false) },
+                    // Removing a list here keeps its items (they move to Unsorted) — the safe L6 default.
+                    onDelete = { g -> listNamed(settings.shopLists, g)?.let { ShopListStore.delete(context, it, ListDeleteMode.KEEP_UNSORTED, null) } },
                     onRename = { o, n ->
-                        SettingsStore.update { it.copy(shopGroups = it.shopGroups.map { x -> if (x == o) n else x }.distinct()) }
-                        ItemStore.items.value.filter { it.tab == Tab.SHOP && it.group == o }
-                            .forEach { Engine.addOrUpdate(context, it.copy(group = n)) }
+                        listNamed(settings.shopLists, o)?.let { l -> ShopListStore.edit(context, l, n, l.icon, l.usualShopId, l.shoppingDay, l.personal) }
                     })
             }
             if (vis("l-groups")) SettingsSection("Learn Topics", { Icon(Icons.Filled.Folder, null, tint = sectionTint("groups")) },

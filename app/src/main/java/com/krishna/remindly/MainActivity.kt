@@ -668,7 +668,7 @@ fun MainScaffold(initialTab: Int) {
             },
             dismissButton = {
                 TextButton(onClick = {
-                    gearSnapshot?.let { snap -> SettingsStore.update { snap } }
+                    gearSnapshot?.let { snap -> SettingsStore.update { cur -> keepListData(snap, cur) } }   // v2.11 (N48): lists are data, never discarded
                     gearLeaveDiff = null; gearTab = null; gearSnapshot = null
                     Logger.e(context, "NAV", null, "settings page left with changes discarded by navigation")
                     applyNavTarget(gearNavTarget); gearNavTarget = null
@@ -708,7 +708,7 @@ fun MainScaffold(initialTab: Int) {
             dismissButton = {
                 TextButton(onClick = {
                     (if (shopMode) shopSettingsSnapshot else settingsSnapshot)?.let { snap ->
-                        SettingsStore.update { snap }
+                        SettingsStore.update { cur -> keepListData(snap, cur) }   // v2.11 (N48): lists are data, never discarded
                         SettingsStore.persistNow()
                     }
                     finishGuard()
@@ -780,12 +780,23 @@ private fun ListSection(tab: Tab, onOpenShops: () -> Unit = {}, onOpenSettings: 
     // a geofence arrival (BuyNow.arm) and hidden ONLY by the user; arming auto-selects it.
     val ui by UiStore.s.collectAsState()
     val shops by ShopStore.shops.collectAsState()
+    val settings by SettingsStore.s.collectAsState()
     val buyNowShop = remember(ui.buyNowShopId, shops) {
         if (tab != Tab.SHOP) null else runCatching { BuyNow.shop(context) }.getOrNull()
     }
+    // v2.11 (N48): Buy opens on the LISTS screen (unless "Classic"); a list opens inside it. The
+    // open list is per-device view state (UiStore) so "Reopen last list" can land straight in it.
+    val listsMode = tab == Tab.SHOP && settings.buyOpensOn == "LISTS"
+    val personalUnlocked by Engine.personalUnlocked.collectAsState()
+    var openListId by rememberSaveable { mutableStateOf(if (listsMode && settings.buyReopenLast) ui.openListId else null) }
+    val openList: Long? = openListId?.takeIf { id ->
+        id == UNSORTED_LIST_ID || (id == BUY_NOW_LIST_ID && buyNowShop != null) ||
+            liveLists(settings.shopLists).any { it.id == id && (!it.personal || personalUnlocked || !PinStore.isSet()) }
+    }
+    LaunchedEffect(openList, listsMode) { if (listsMode) UiStore.update { it.copy(openListId = openList) } }
     var view by remember { mutableStateOf(if (isDone) ListView.DONE else ListView.ACTIVE) }
     LaunchedEffect(buyNowShop?.id, ui.buyNowAt) {
-        if (buyNowShop != null) { view = ListView.BUY_NOW; isDone = false }      // arm/replace → show it
+        if (buyNowShop != null) { view = ListView.BUY_NOW; isDone = false; if (listsMode) openListId = BUY_NOW_LIST_ID }   // arm/replace → show it
         else if (view == ListView.BUY_NOW) view = ListView.ACTIVE                // hidden or gone
     }
     // v1.33 Q2 fix: Shop's Personal/General lives ABOVE the Active/Done Crossfade so both
@@ -793,9 +804,24 @@ private fun ListSection(tab: Tab, onOpenShops: () -> Unit = {}, onOpenSettings: 
     // only: leaving the tab disposes this (returns to General), and it never survives a
     // restart, so the PIN-lock model is untouched. Relock also clears it.
     var personalFilter by remember { mutableStateOf(false) }
-    val personalUnlocked by Engine.personalUnlocked.collectAsState()
     LaunchedEffect(personalUnlocked) {
         if (!personalUnlocked && personalFilter) personalFilter = false
+    }
+    // v2.11 (N48 G2): a Private list shows its (Personal) items; any other list opens on General.
+    LaunchedEffect(openList) {
+        if (listsMode) personalFilter = liveLists(settings.shopLists).firstOrNull { it.id == openList }?.personal == true
+    }
+    androidx.activity.compose.BackHandler(enabled = listsMode && openList != null) { openListId = null }
+    if (listsMode && openList == null) {
+        ShopListsScreen(
+            onOpenList = { id ->
+                openListId = id
+                view = if (id == BUY_NOW_LIST_ID) ListView.BUY_NOW else if (isDone) ListView.DONE else ListView.ACTIVE
+            },
+            onOpenSettings = onOpenSettings,
+            buyNowShop = buyNowShop
+        )
+        return
     }
     Crossfade(targetState = view, animationSpec = tween(220), label = "adFlip") { v ->
         ListPage(
@@ -806,7 +832,9 @@ private fun ListSection(tab: Tab, onOpenShops: () -> Unit = {}, onOpenSettings: 
             onOpenSettings = onOpenSettings,
             view = v,
             onSwitchView = { nv -> view = nv; isDone = nv == ListView.DONE },
-            buyNowShop = buyNowShop
+            buyNowShop = buyNowShop,
+            openList = if (listsMode) openList else null,
+            onBackToLists = if (listsMode) ({ openListId = null }) else null
         )
     }
 }

@@ -162,7 +162,9 @@ fun ShareListSheet(
             val settingsNow = SettingsStore.s.collectAsState().value
             var incDone by remember { mutableStateOf(settingsNow.shareIncludeDone) }
             var incQty by remember { mutableStateOf(settingsNow.shareIncludeQty) }
-            fun textBody(): String = if (tab == Tab.SHOP) groupShareText(listName, items.filter { it.id in selected && !isLocked(it) }, incDone, incQty)
+            // v2.11 (N48): Shop lists share in Krishna's "List_Name:-" numbered format (replaces N45's text).
+            fun textBody(): String = if (tab == Tab.SHOP) listShareText(listName, items.filter { it.id in selected && !isLocked(it) },
+                                         ListShareOpts(incDone, settingsNow.shareUrgentTag, settingsNow.shareBoughtTag, incQty, settingsNow.shareHeadingSuffix))
                                      else shareAsText(listName, sharedItemsOf(items.filter { it.id in selected }, tab))
             fun sendTo(pkg: String?) {
                 val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, textBody())
@@ -182,7 +184,7 @@ fun ShareListSheet(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { sendTo("com.whatsapp") }, modifier = Modifier.weight(1f).height(44.dp),
+                Button(onClick = { sendTextToWhatsApp(context, textBody(), settingsNow.shareWaApp) }, modifier = Modifier.weight(1f).height(44.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))) { Text("WhatsApp", color = Color.White, fontWeight = FontWeight.Bold) }   // hex-ok: brand colour
                 OutlinedButton(onClick = { sendTo(null) }, modifier = Modifier.weight(1f).height(44.dp)) { Text("Share…") }
                 OutlinedButton(onClick = {
@@ -361,6 +363,10 @@ fun ReceivedListSheet(r: ShareRecord, onClose: () -> Unit) {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text("from ${r.fromEmail} \u00b7 read-only \u00b7 ticks stay on this phone",
                     style = MaterialTheme.typography.labelSmall, color = InkHint)
+                // v2.11 (N48 G1): a received Shop list can become one of MY lists (a new list, open items).
+                if (r.tab == "SHOP") TextButton(onClick = {
+                    ShopListStore.addFromShare(context, r)?.let { Feedback.toast(context, "Added to your lists as \u201c${it.name}\u201d") }
+                }) { Text("\uD83D\uDED2  Add to my lists", fontWeight = FontWeight.Bold) }
                 Spacer(Modifier.height(8.dp))
                 r.items.forEachIndexed { idx, it ->
                     val ticked = idx in ticks

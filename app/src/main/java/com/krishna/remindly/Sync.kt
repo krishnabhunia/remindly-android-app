@@ -243,6 +243,7 @@ object SyncRepo {
         }
         if (changed) {
             ItemStore.replaceAll(cur.values.toList())
+            ShopListStore.reconcile(context)   // v2.11 (N48): an older device's new group becomes a list
             runCatching { AlarmScheduler.rescheduleAll(context) }
         }
     }
@@ -292,11 +293,14 @@ object SyncRepo {
         }
     }
 
-    private fun applySettings(context: Context, remote: AppSettings) {
+    private fun applySettings(context: Context, remoteIn: AppSettings) {
         val local = SettingsStore.s.value
-        if (remote.settingsUpdatedAt <= local.settingsUpdatedAt) return
+        if (remoteIn.settingsUpdatedAt <= local.settingsUpdatedAt) return
+        // v2.11 (N48): a pre-43 device's doc misses the new Booleans (Gson → false) — restore defaults.
+        val remote = SettingsStore.migrate(remoteIn)
         // Keep device-local fields; union groups/topics so neither device loses one.
         val merged = remote.copy(
+            shopLists = mergeShopLists(local.shopLists, remote.shopLists),   // v2.11 (N48): per id, latest wins
             cloudSync = local.cloudSync,                 // the toggle is per-device
             lastSyncAt = local.lastSyncAt,
             lastDataBackupAt = local.lastDataBackupAt,
@@ -306,6 +310,8 @@ object SyncRepo {
         )
         seenSettings = remote.settingsUpdatedAt
         SettingsStore.applyRemote(merged)
+        ShopListStore.reconcile(context)   // v2.11 (N48): heal duplicate names, stamp items, re-mirror
+        ShopListStore.rescheduleShoppingDays(context)
     }
 
     // ---------------------------------------------------------------- local -> remote

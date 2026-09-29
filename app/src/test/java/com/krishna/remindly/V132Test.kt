@@ -106,7 +106,7 @@ class V132Test {
             )
         )
         val migrated = SettingsStore.migrate(old)
-        assertEquals(42, migrated.ver)
+        assertEquals(43, migrated.ver)
         assertEquals("MOVE", migrated.activeSwipeAction)
         assertEquals("MOVE", migrated.doneSwipeAction)
         assertFalse(migrated.tabGestureOv.containsKey("tActiveAction"))
@@ -117,7 +117,7 @@ class V132Test {
 
     @Test fun migration_defaults_revSwipeDelete_off_for_upgraders() {
         val migrated = SettingsStore.migrate(AppSettings(ver = 17))
-        assertEquals(42, migrated.ver)
+        assertEquals(43, migrated.ver)
         assertFalse(migrated.revSwipeDelete)
     }
 

@@ -22,15 +22,15 @@ class V127Test {
         assertEquals("H24", healed.timeFormat)
         assertEquals(50, healed.swipeDistancePct)
         assertEquals(false, healed.swipeHaptic)
-        assertEquals(42, healed.ver)
+        assertEquals(43, healed.ver)
     }
 
     @Test fun migrate_still_reaches_18() {
-        assertEquals(42, SettingsStore.migrate(AppSettings(ver = 17)).ver)
+        assertEquals(43, SettingsStore.migrate(AppSettings(ver = 17)).ver)
     }
 
     @Test fun default_settings_valid() {
-        assertEquals(42, AppSettings().ver)   // v2.04 schema
+        assertEquals(43, AppSettings().ver)   // v2.04 schema
         assertTrue(healSettings(AppSettings()).ver == 42)
     }
 }

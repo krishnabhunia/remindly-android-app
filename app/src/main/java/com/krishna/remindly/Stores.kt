@@ -39,6 +39,8 @@ object Stores {
         CityStore.load()
         ChainStore.load()
         ProductStore.load()
+        // v2.11 (N48): groups → lists (idempotent; also heals duplicate names from two devices).
+        ShopListStore.reconcile(appContext)
         // v1.90 one-time migration: seed Cities from the free-text Shop.area values. Pure
         // function (unit-tested), guarded, idempotent, and flagged off after the first run.
         runCatching {
@@ -112,6 +114,15 @@ object ItemStore {
 
     fun replaceAll(newItems: List<Item>) {
         items.value = newItems
+        save()
+    }
+
+    /** v2.11 (N48): many edits, one write — each changed item is merge-stamped like upsert(). */
+    fun upsertAll(changed: List<Item>) {
+        if (changed.isEmpty()) return
+        val now = System.currentTimeMillis()
+        val byId = changed.associateBy { it.id }
+        items.value = items.value.filter { it.id !in byId } + changed.map { it.copy(updatedAt = now) }
         save()
     }
 
@@ -606,6 +617,12 @@ object SettingsStore {
         if (out.ver < 41) out = out.copy(ver = 41)
         // v2.9 (N47/N45): updater + shopping-list settings — pure defaults, healed.
         if (out.ver < 42) out = out.copy(ver = 42)
+        // v2.11 (N48): lists-first Buy tab + list sharing. Gson leaves the new Booleans FALSE on
+        // pre-43 JSON, so the ON defaults are restored once here (list records are seeded at startup).
+        if (out.ver < 43) out = out.copy(
+            ver = 43, buyShowUnsorted = true, buyCardTotal = true, buyDupWarn = true,
+            shareWaIcon = true, shareUrgentTag = true, shareBoughtTag = true
+        )
         // v1.48: calendar window unit/months + Shop.area + discrete radius — defaults only.
         return out
     }
@@ -1030,7 +1047,9 @@ object Backup {
         val places: List<GeoPlace> = emptyList(),
         val tasksGroups: List<String> = emptyList(),
         val shopGroups: List<String> = emptyList(),
-        val learnTopics: List<String> = emptyList()
+        val learnTopics: List<String> = emptyList(),
+        // v2.11 (N48): the Buy lists travel with the items that point at them. Null on older files.
+        val shopLists: List<ShopList>? = emptyList()
     )
 
     data class SettingsBlob(val kind: String = "remindly-settings", val settings: AppSettings)
@@ -1041,7 +1060,8 @@ object Backup {
             DataBlob(
                 items = ItemStore.items.value, calls = CallStore.calls.value,
                 places = PlaceStore.places.value,
-                tasksGroups = s.tasksGroups, shopGroups = s.shopGroups, learnTopics = s.learnTopics
+                tasksGroups = s.tasksGroups, shopGroups = s.shopGroups, learnTopics = s.learnTopics,
+                shopLists = s.shopLists
             )
         )
     }
@@ -1088,9 +1108,11 @@ object Backup {
             s.copy(
                 tasksGroups = (s.tasksGroups + blob.tasksGroups).distinct(),
                 shopGroups = (s.shopGroups + blob.shopGroups).distinct(),
-                learnTopics = (s.learnTopics + blob.learnTopics).distinct()
+                learnTopics = (s.learnTopics + blob.learnTopics).distinct(),
+                shopLists = mergeShopLists(s.shopLists, blob.shopLists ?: emptyList())   // v2.11 (N48): per id, latest wins
             )
         }
+        ShopListStore.reconcile(context)   // v2.11 (N48): a ≤2.10 file has groups only — they become lists here
         AlarmScheduler.rescheduleAll(context)
         Geofencer.registerAll(context)
     }
@@ -1100,8 +1122,10 @@ object Backup {
         CallStore.replaceAll(blob.calls)
         PlaceStore.replaceAll(blob.places)
         SettingsStore.update { s ->
-            s.copy(tasksGroups = blob.tasksGroups, shopGroups = blob.shopGroups, learnTopics = blob.learnTopics)
+            s.copy(tasksGroups = blob.tasksGroups, shopGroups = blob.shopGroups, learnTopics = blob.learnTopics,
+                shopLists = blob.shopLists ?: emptyList())
         }
+        ShopListStore.reconcile(context)   // v2.11 (N48)
         AlarmScheduler.rescheduleAll(context)
         Geofencer.registerAll(context)
     }
@@ -1110,7 +1134,10 @@ object Backup {
         val keepT = SettingsStore.s.value.tasksGroups
         val keepS = SettingsStore.s.value.shopGroups
         val keepL = SettingsStore.s.value.learnTopics
-        SettingsStore.replace(blob.settings.copy(tasksGroups = keepT, shopGroups = keepS, learnTopics = keepL))
+        // v2.11 (N48): lists are DATA (items point at them) — a settings import merges them, never drops mine.
+        val lists = mergeShopLists(SettingsStore.s.value.shopLists, (blob.settings.shopLists ?: emptyList()))
+        SettingsStore.replace(healSettings(blob.settings).copy(tasksGroups = keepT, shopGroups = keepS, learnTopics = keepL, shopLists = lists))
+        ShopListStore.reconcile(Stores.appContext)
     }
 
     /** Kind sniffing: "remindly-data" / "remindly-settings" / legacy full blob. */
@@ -1132,7 +1159,8 @@ object Backup {
                 places = (b.places ?: emptyList()).map(::healPlace),
                 tasksGroups = b.tasksGroups ?: emptyList(),
                 shopGroups = b.shopGroups ?: emptyList(),
-                learnTopics = b.learnTopics ?: emptyList()
+                learnTopics = b.learnTopics ?: emptyList(),
+                shopLists = (b.shopLists ?: emptyList()).map(::healShopList)
             )
         }
     }.getOrNull()
@@ -1326,6 +1354,17 @@ fun settingsDiff(old: AppSettings?, new: AppSettings): List<Triple<String, Strin
     }
     listChange("Tasks groups", old.tasksGroups, new.tasksGroups)
     listChange("Shop groups", old.shopGroups, new.shopGroups)
+    // v2.11 (N48): the Buy ⚙ Lists + Sharing rows (list records themselves are data, not settings).
+    add("Buy tab opens on", if (old.buyOpensOn == "CLASSIC") "Classic" else "Lists", if (new.buyOpensOn == "CLASSIC") "Classic" else "Lists")
+    add("Reopen last list", onOff(old.buyReopenLast), onOff(new.buyReopenLast))
+    add("Show Unsorted card", onOff(old.buyShowUnsorted), onOff(new.buyShowUnsorted))
+    add("Card shows estimated total", onOff(old.buyCardTotal), onOff(new.buyCardTotal))
+    add("Warn on duplicates across lists", onOff(old.buyDupWarn), onOff(new.buyDupWarn))
+    add("WhatsApp icon in list header", onOff(old.shareWaIcon), onOff(new.shareWaIcon))
+    add("WhatsApp app", if (old.shareWaApp == "BUSINESS") "WhatsApp Business" else "WhatsApp", if (new.shareWaApp == "BUSINESS") "WhatsApp Business" else "WhatsApp")
+    add("Share: “Urgent” tag", onOff(old.shareUrgentTag), onOff(new.shareUrgentTag))
+    add("Share: “Bought” status", onOff(old.shareBoughtTag), onOff(new.shareBoughtTag))
+    add("Share: heading suffix", "“${old.shareHeadingSuffix}”", "“${new.shareHeadingSuffix}”")
     listChange("Learn topics", old.learnTopics, new.learnTopics)
     add("Tasks new-item time", mins(old.tasksNewDueMinutes), mins(new.tasksNewDueMinutes))
     add("Shop new-item time", mins(old.shopNewDueMinutes), mins(new.shopNewDueMinutes))

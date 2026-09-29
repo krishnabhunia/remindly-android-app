@@ -27,6 +27,7 @@ object AlarmScheduler {
     const val TYPE_DUE_DEMOTED = 18   // v1.68 quiet re-fire (items)
     const val TYPE_CALL_DEMOTED = 19  // v1.68 same, call card
     const val TYPE_SHOP_ARRIVE = 20   // v2.05 (N37): snoozed shop-arrival re-fire (id = shop id)
+    const val TYPE_SHOP_DAY = 21      // v2.11 (N48): a Buy list's shopping-day reminder (id = list id)
     const val ACTION_CALL_DONE = "com.krishna.remindly.CALL_DONE"
     const val ACTION_CALL_CLOSE = "com.krishna.remindly.CALL_CLOSE"
     const val ACTION_TEST_DISMISS = "com.krishna.remindly.TEST_DISMISS"
@@ -119,6 +120,9 @@ object AlarmScheduler {
     /** v2.8 (N44): a deleted shop must leave no snoozed arrival re-fire behind. */
     fun cancelShopArrive(context: Context, shopId: Long) = cancel(context, shopId, TYPE_SHOP_ARRIVE)
 
+    fun scheduleShoppingDay(context: Context, listId: Long, at: Long) = scheduleAt(context, at, TYPE_SHOP_DAY, listId)
+    fun cancelShoppingDay(context: Context, listId: Long) = cancel(context, listId, TYPE_SHOP_DAY)
+
     fun cancelOverdue(context: Context, id: Long) = cancel(context, id, TYPE_OVERDUE)
 
     fun scheduleCallSnooze(context: Context, id: Long) =
@@ -177,5 +181,6 @@ object AlarmScheduler {
                 null -> Unit
             }
         }
+        ShopListStore.rescheduleShoppingDays(context)   // v2.11 (N48)
     }
 }
