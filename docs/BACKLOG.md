@@ -68,9 +68,10 @@ Any item that cannot honour the rule states WHY in its entry.
 
 ## WAITING QUEUE
 
-NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), N48 (design settled 29-Sep — all ★ defaults; waiting for build trigger), SPIKE-2 (PARKED — silent). N9 + N6pt2 SHIPPED as 2.10.
+NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design — re-spec per ShopList), SPIKE-2 (PARKED — silent). N48 SHIPPED as 2.11.
 
-### N48 — Buy tab: LISTS FIRST, then items inside a list — QUEUED, design SETTLED (defaults)
+### N48 — SHIPPED as v2.11 (29-Sep-2026) — queued entry kept below
+### (was) N48 — Buy tab: LISTS FIRST, then items inside a list — QUEUED, design SETTLED (defaults)
 ### Krishna 29-Sep-2026: "The shopping tab is directly adding the item card decks to directly purchase,
 ### but I want to change that first Lists to be added and then inside that list items to be add"
 ### (design/n48-lists-first-design-v1.html, rounds 1–2) — "Add to queue" 29-Sep-2026 (×2). NO BUILD until trigger.
@@ -998,6 +999,62 @@ TO BUILD:
 before the fix is written. Building Q19 alone would repeat the pattern that caused it.
 
 ---
+
+## v2.11 — SHIPPED 29-Sep-2026 (versionCode 2011000; tests: see CI run below)
+
+### N48 — Buy tab LISTS FIRST + list sharing (Share icon, one-tap WhatsApp)
+Trigger: Krishna, "release the next version" (29-Sep-2026). Feature release → 2.10 → 2.11 / 2011000. Schema 42 → 43.
+
+AS BUILT:
+- ShopLists.kt (pure, 37 local tests): ShopList(id, name, icon, pinned, order, usualShopId, shoppingDay, personal,
+  createdAt, updatedAt, deletedAt) + Item.listId; listIdOf (listId, else group NAME, else Unsorted); seedShopLists
+  (groups → lists, DETERMINISTIC seed ids from the name so two devices mint the same id, dedupeListNames keeps the
+  oldest), mergeShopLists (per id, latest wins), mirrorListsIntoSettings (shopGroups/shopGroupOrder/groupIcons/
+  shopDefaultGroup follow the lists — older versions + Classic still see the grouping), listStats/estPriceOf,
+  sortedLists/moveListOrder, otherListHolding, recentInList, categoryGroupsOf, listGroupsOf, delete/rename/privacy/
+  duplicate/restart helpers, listShareText in Krishna's format, shareOrderFor, shoppingDayFireAt, itemsFromShared.
+- ShopListStore.kt: every write stamps updatedAt + re-mirrors; reconcile() at startup, after backup import and after
+  sync apply (items stamped WITHOUT bumping updatedAt — derived data, no sync storm); shopping-day alarm
+  TYPE_SHOP_DAY=21 (09:00, info notification; private list never shows its name).
+- UI: ShopListsUi.kt (L1 Lists screen, L2 editor, L5 menu, L6 delete Keep/Move/Delete + Undo, merge, L7 starters,
+  Buy Now banner), ListShareUi.kt (S2 preview sheet, S3 direct WhatsApp → Business → share sheet + toast),
+  ListPage scoped by openList (back, Share + WhatsApp + ⋮, inner sort SHOP/CATEGORY/PRIORITY/DATE/NONE, quick add
+  into the list with usual shop / Private / recent pick, cross-list warning), MainActivity.ListSection routes Lists ↔
+  list (BackHandler, UiStore.openListId, Buy Now arm → cross-list view), editor Group → List picker + move Undo,
+  N17 sheet text → the new format, received Shop share → "Add to my lists" (G1), Buy ⚙ Lists + Sharing sections.
+
+⚑ DEVIATIONS FROM THE DESIGN, stated plainly:
+  1 STORAGE (F1): the ShopList records ride the SETTINGS doc (already synced + backed up), merged per id —
+    not a new Firestore collection. Reason: a new collection may need a rules change (cf. N29) that cannot be
+    tested from here. Also a CORRECTION to round 1: I wrote that an empty group could not exist; wrong — the
+    settings registry (shopGroups) already allowed it. F1's intent (ids, safe renames, pin/day/shop/private) holds.
+  2 Custom order is ▲▼ on each card (and in Buy ⚙), not drag — same capability, like the v1.15 aisle order.
+  3 The "Show done lists" chip is not built — fully bought lists stay visible ("All bought"), sorted by the chip.
+  4 G3: no widget shows Shop items, so there is nothing to point at a list; the default list is where items added
+    OUTSIDE a list go (Classic view, Buy Now view).
+  5 Standing per-tab rule: Lists + Sharing-a-list settings are Buy-only (no other tab has lists) — one control on
+    the Buy ⚙ page, like N5's exception.
+  6 "Include bought items" keeps its existing default (OFF, N45's shareIncludeDone) — the design preview showed ON;
+    not changed silently.
+  7 The WhatsApp icon is a chat glyph on WhatsApp green (no brand logo asset in the app).
+  8 Inside a list, Search / Shopping trip / Buy settings / Lock moved into the ⋮ menu to make room for the icons.
+
+CLASS SWEEP — every consumer of the Shop group NAME (the list mirror):
+  | Site | Disposition |
+  | ListScreens GroupMenuSheet (Classic long-press: rename/icon/delete/duplicate) | FIXED — routed through ShopListStore |
+  | SettingsScreen "Shop Groups" editor (add/rename/delete/order) | FIXED — now "Lists", works on the records |
+  | ListScreens AddEditSheet group field | FIXED — List picker, listId + group written together |
+  | ListScreens quickAddNow default group | FIXED — open list / default list |
+  | ShareUi N17 textBody + WhatsApp button | FIXED — listShareText + sendTextToWhatsApp |
+  | Components ItemChipList group chip | FIXED — hidden in Lists mode (redundant) |
+  | Settings discard (gear + Settings tab) | FIXED — keepListData: list records never discarded |
+  | Sync.applySettings / Backup merge/replace/applySettings | FIXED — per-id merge + reconcile |
+  | ListScreens Classic "By Group" order, TripSheet, LocationsSheet group filter, Receivers place groupFilter,
+    listScope search, RemindlyApp one-time seeding | SAFE — read the mirrored name/order |
+
+NEGATIVE CONTROL (run on the pure suite before release): N45-style heading, no duplicate healing, random seed ids
+→ 6 tests failed (shareText ×3, duplicateNames, twoDevices, seedIds); restored → green.
+Device checklist: section Y (Y1–Y18).
 
 ## v2.10 — SHIPPED 28-Sep-2026 (versionCode 2010000, 571 debug tests green; release variant tested by the Action)
 

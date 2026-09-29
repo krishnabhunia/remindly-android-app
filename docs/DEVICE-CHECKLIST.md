@@ -111,6 +111,50 @@ I11 ☐ Settings: master switch OFF hides the Shared icon and every group share 
       with a readable list.
 I12 ☐ Signed OUT: the share sheet and hub show the sign-in prompt, no crash.
 
+## Y. BUY LISTS FIRST + LIST SHARING (v2.11 N48) — install OVER 2.10 with real groups, then a clean install
+
+Y1 ☐ UPGRADE over 2.10 with Buy groups (e.g. Groceries, Home) and some ungrouped items. EXPECT: Buy opens
+      on the Lists screen; one card per old group with its N45 icon; ungrouped items in a dashed
+      "Unsorted" card. Error Logs: one "LISTS reconcile: +N list(s)…" line. Close app, reopen → no new lines.
+Y2 ☐ Card figures: "5 to buy · 2 done · updated …", progress bar, shop pill, "≈ ₹" (only when prices are
+      known), "Due <day>" when a shopping day is set. Recent / A–Z / Custom reorder; Custom shows ▲▼.
+      Pin a list → it stays on top in every sort.
+Y3 ☐ "New list…" bar: type "Diwali" + keyboard Done → the new list opens with the add bar ready.
+      ＋ circle → the editor (name, icon, usual shop, shopping day, Private) → "Create & add items".
+Y4 ☐ Inside a list: ← and system Back return to Lists. Quick-add "Milk" → it is in THIS list only.
+      With a usual shop set, the new item carries that shop. Sort chip offers By Shop / Category /
+      Priority / Date / No Group; no list-name chip on the cards.
+Y5 ☐ Duplicate warnings: "Toothpaste" open in Monthly stock → typing it in Groceries shows
+      "Already in 📦 Monthly stock" (amber). Buy ⚙ → Lists → Warn on duplicates OFF → warning gone.
+Y6 ☐ "Recently bought in this list": buy Tomato 1 kg, then type "to" → chip "Tomato · 1 / kg · bought
+      here"; tap + ✓ → new item has qty 1, unit kg.
+Y7 ☐ Editor: the Group field reads "List" with "+ New list…". Change an item's list → Save → toast
+      "Moved to …" with Undo; Undo puts it back.
+Y8 ☐ List menu: Duplicate (fresh open copies), Restart (bought → To buy, Undo), Mark all bought
+      (Undo), Merge into another list (items move, list gone, Undo), Rename (items follow; old app
+      versions / Classic view show the new name).
+Y9 ☐ Delete a list: default "Keep items — Unsorted" → items in Unsorted with price history intact;
+      "Move to…" → items in the chosen list; "Delete the items too" → items in Recently Deleted.
+      Each: Undo restores the list AND its items.
+Y10 ☐ SHARE icon → preview shows exactly:  Groceries:-  (blank line)  1. Milk - 2 / L - Urgent …
+      Flip the 4 switches → preview follows. WhatsApp / Share… / Copy all work; "Send to a Remindly
+      user instead…" opens the N17 sheet.
+Y11 ☐ WHATSAPP icon: one tap → WhatsApp's chat picker with the text filled in (no Remindly sheet).
+      Long-press → the preview. Buy ⚙ → Sharing → WhatsApp Business (both installed) → Business opens.
+      Uninstall/disable WhatsApp → toast + Android share sheet. Icon OFF in settings → hidden.
+Y12 ☐ Private list: create with Private ON (PIN asked if none) → card shows 🔒; opening asks the PIN;
+      its items are Personal; locked items never appear in shared text ("… locked Personal items left out").
+Y13 ☐ Shopping day: set tomorrow → at 09:00 one notification "Shopping day: 🛒 Groceries — N items to buy".
+      Private list → "Shopping day: a private list". Reboot before 09:00 → still fires (persistence quartet).
+Y14 ☐ Buy Now: walk into a geofenced shop with items in 2 lists → Buy opens the cross-list "Buy Now" view
+      grouped by list; ← returns to Lists, whose banner offers Open / ✕.
+Y15 ☐ Received Shop share (N17 hub) → "🛒 Add to my lists" → a new list with the sender's list name.
+Y16 ☐ Two devices with cloud sync, both upgraded from the same groups → ONE list per name on both
+      (no duplicates). Rename on phone A → phone B shows the new name after sync.
+Y17 ☐ Buy ⚙ → Lists → "Classic (one flat list)" → the old Buy page is back (items added there go to the
+      default list). Discard on the settings page never removes a list.
+Y18 ☐ Persistence quartet for Y3/Y7/Y9: act → verify → close/reopen → verify → reboot → verify.
+
 ## X. PERMISSIONS OPTIONAL, ASKED IN CONTEXT (v2.10 N9) — run one phone as a CLEAN INSTALL
 
 X1 ☐ UPDATE 2.9 → 2.10 from Settings → Updates (the W3 path). EXPECT: data intact; anything you had
