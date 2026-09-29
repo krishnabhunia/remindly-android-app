@@ -1000,7 +1000,7 @@ before the fix is written. Building Q19 alone would repeat the pattern that caus
 
 ---
 
-## v2.11 — SHIPPED 29-Sep-2026 (versionCode 2011000; tests: see CI run below)
+## v2.11 — SHIPPED 29-Sep-2026 (versionCode 2011000, 613 debug tests green + signed release APK — Actions run 36530817226, publish off)
 
 ### N48 — Buy tab LISTS FIRST + list sharing (Share icon, one-tap WhatsApp)
 Trigger: Krishna, "release the next version" (29-Sep-2026). Feature release → 2.10 → 2.11 / 2011000. Schema 42 → 43.
@@ -1054,6 +1054,10 @@ CLASS SWEEP — every consumer of the Shop group NAME (the list mirror):
 
 NEGATIVE CONTROL (run on the pure suite before release): N45-style heading, no duplicate healing, random seed ids
 → 6 tests failed (shareText ×3, duplicateNames, twoDevices, seedIds); restored → green.
+CI (Build & release APK, manual, publish OFF, on the PR branch): run 1 failed compile (4× missing
+@OptIn(ExperimentalMaterial3Api) around EditorSheet) → fixed; run 2 failed 1 test (V127 schema assert written as
+`ver == 42`, missed by the 42→43 sweep) → fixed; run 3 GREEN: 613 tests, signed APK built + fingerprint verified.
+Publishing happens when this PR is merged to main (the version bump in app/build.gradle.kts triggers the Action).
 Device checklist: section Y (Y1–Y18).
 
 ## v2.10 — SHIPPED 28-Sep-2026 (versionCode 2010000, 571 debug tests green; release variant tested by the Action)
