@@ -12,6 +12,7 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <StartupObject>Remindly.App.Program</StartupObject>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
 
     <!-- Builds on Windows and cross-compiles from Linux/macOS. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -36,6 +37,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Remindly.Core\Remindly.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Program.Main is the entry point (single instance, --exit, --smoke-test), so App.xaml must not
+       generate a second Main: compile it as a plain page; Program calls InitializeComponent itself. -->
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Remove="App.xaml" />
+    <Page Include="App.xaml" />
   </ItemGroup>
 
   <ItemGroup>

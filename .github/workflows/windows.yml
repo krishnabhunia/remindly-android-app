@@ -100,6 +100,7 @@ jobs:
       - name: Build the single-file exe (portable)
         run: |
           dotnet publish src/Remindly.App/Remindly.App.csproj -c Release -o out/portable
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)" }
           $exe = Get-Item out/portable/Remindly.exe
           $fv = $exe.VersionInfo.ProductVersion
           Write-Host "Remindly.exe $($exe.Length) bytes, version $fv"
