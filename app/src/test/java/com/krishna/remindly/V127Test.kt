@@ -31,6 +31,6 @@ class V127Test {
 
     @Test fun default_settings_valid() {
         assertEquals(43, AppSettings().ver)   // v2.04 schema
-        assertTrue(healSettings(AppSettings()).ver == 42)
+        assertTrue(healSettings(AppSettings()).ver == 43)
     }
 }
