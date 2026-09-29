@@ -1,0 +1,28 @@
+<Window x:Class="Remindly.App.Views.AlarmWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" WindowState="Maximized" Topmost="True" ShowInTaskbar="True" ResizeMode="NoResize"
+        Background="#D32F2F" FontFamily="{StaticResource Font.Body}" TextOptions.TextFormattingMode="Display" UseLayoutRounding="True"
+        Title="Remindly alarm" Icon="pack://application:,,,/Assets/app.ico" MouseDown="OnRootMouseDown">
+    <Grid>
+        <Border x:Name="Card" Background="#FFFFFF" CornerRadius="20" Padding="44,36" MaxWidth="640" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border.Effect><DropShadowEffect BlurRadius="40" ShadowDepth="0" Opacity="0.35" /></Border.Effect>
+            <StackPanel>
+                <TextBlock x:Name="Kicker" Text="ALARM · TASKS" FontSize="13" FontWeight="SemiBold" Foreground="#9A9AAC" HorizontalAlignment="Center" />
+                <TextBlock x:Name="Clock" Text="18:00" FontSize="56" FontWeight="Light" Foreground="#1B1B26" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                <TextBlock x:Name="TitleText" Text="Title" FontSize="26" FontWeight="SemiBold" Foreground="#1B1B26" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,8,0,0" />
+                <TextBlock x:Name="Sub" Text="" FontSize="14" Foreground="#6B6B80" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0" />
+                <Border x:Name="Pill" Background="#FBE2E2" CornerRadius="12" Padding="10,3" HorizontalAlignment="Center" Margin="0,12,0,0" Visibility="Collapsed">
+                    <TextBlock x:Name="PillText" Text="Urgent" FontSize="12" FontWeight="SemiBold" Foreground="#C62828" />
+                </Border>
+                <UniformGrid Columns="4" Margin="0,30,0,0">
+                    <Button x:Name="DoneBtn" Style="{StaticResource Button.Primary}" Content="Done" Click="OnDone" MinHeight="52" Margin="4" FontSize="15" />
+                    <Button x:Name="SnoozeBtn" Style="{StaticResource Button.Secondary}" Content="Snooze" Click="OnSnooze" MinHeight="52" Margin="4" FontSize="15" />
+                    <Button x:Name="QuietBtn" Style="{StaticResource Button.Secondary}" Content="Quiet" Click="OnQuiet" MinHeight="52" Margin="4" FontSize="15" ToolTip="Back later as a quiet Notification (this item stays Notify)" />
+                    <Button Style="{StaticResource Button.Ghost}" Content="Dismiss" Click="OnDismiss" MinHeight="52" Margin="4" FontSize="15" />
+                </UniformGrid>
+                <TextBlock x:Name="Hint" Text="Double-click outside the card = Quiet" FontSize="12" Foreground="#9A9AAC" HorizontalAlignment="Center" Margin="0,14,0,0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

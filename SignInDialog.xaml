@@ -1,0 +1,49 @@
+<Window x:Class="Remindly.App.Views.SignInDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Style="{StaticResource Window.Dialog}" WindowStartupLocation="CenterOwner"
+        Title="Google sign-in setup" Width="640" Height="560" MinWidth="560" MinHeight="480"
+        Icon="pack://application:,,,/Assets/app.ico">
+    <Grid Margin="24">
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="One-time step: a Google Desktop client" Style="{StaticResource Text.Title}" />
+            <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
+                       Text="A desktop app signs you in through your browser, which needs an OAuth client of type Desktop in the SAME Google Cloud project as Remindly's Firebase (remindly-5c1e6). Google requires this per app; it takes about two minutes and is done once." />
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,14,0,0">
+            <StackPanel>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Steps" Style="{StaticResource Text.Section}" />
+                        <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0" TextWrapping="Wrap">
+                            1. Open <Hyperlink Click="OnOpenConsole">console.cloud.google.com → APIs &amp; Services → Credentials</Hyperlink> and pick the project <Run FontWeight="SemiBold">remindly-5c1e6</Run> (the one with your Android client).<LineBreak/>
+                            2. Click <Run FontWeight="SemiBold">+ Create credentials → OAuth client ID</Run>. Application type: <Run FontWeight="SemiBold">Desktop app</Run>. Name: Remindly Windows. Create.<LineBreak/>
+                            3. On the confirmation card, click <Run FontWeight="SemiBold">Download JSON</Run> — or copy the Client ID and Client secret.<LineBreak/>
+                            4. Either drop that JSON file below, or paste the two values. Then sign in.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"
+                                   Text="If the consent screen says the app is in Testing, add your own Gmail address under OAuth consent screen → Test users (the Android app already uses this project, so the screen exists). Nothing else in Firebase needs changing." />
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="CLIENT JSON FILE" Style="{StaticResource Text.Field}" />
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <TextBox x:Name="JsonPath" Style="{StaticResource TextBox.Base}" IsReadOnly="True" Tag="client_secret_….json" AllowDrop="True" PreviewDragOver="OnDragOver" Drop="OnDrop" />
+                    <Button Grid.Column="1" Style="{StaticResource Button.Secondary}" Content="Browse…" Margin="8,0,0,0" Click="OnBrowse" />
+                </Grid>
+                <TextBlock Text="— or paste —" Style="{StaticResource Text.Caption}" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                <TextBlock Text="CLIENT ID" Style="{StaticResource Text.Field}" />
+                <TextBox x:Name="ClientId" Style="{StaticResource TextBox.Base}" Tag="1234567890-abc…apps.googleusercontent.com" />
+                <TextBlock Text="CLIENT SECRET" Style="{StaticResource Text.Field}" />
+                <PasswordBox x:Name="ClientSecret" MinHeight="34" Padding="10,6" FontSize="13" Background="{DynamicResource Brush.Control.Background}" BorderBrush="{DynamicResource Brush.Control.Border}" Foreground="{DynamicResource Brush.Text.Primary}" />
+                <TextBlock x:Name="Status" Style="{StaticResource Text.Caption}" Margin="0,8,0,0" />
+            </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Style="{StaticResource Button.Ghost}" Content="Remove saved client" Click="OnClear" Margin="0,0,8,0" />
+            <Button Style="{StaticResource Button.Secondary}" Content="Cancel" Click="OnCancel" Margin="0,0,8,0" MinWidth="90" />
+            <Button Style="{StaticResource Button.Primary}" Content="Save client" Click="OnSave" MinWidth="120" IsDefault="True" />
+        </StackPanel>
+    </Grid>
+</Window>

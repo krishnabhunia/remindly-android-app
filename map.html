@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Remindly map picker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body, #map { height: 100%; margin: 0; font-family: "Segoe UI", sans-serif; }
+  #bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000; display: flex; gap: 6px; }
+  #q { flex: 1; padding: 9px 12px; border: 1px solid #cfd5df; border-radius: 8px; font-size: 14px; }
+  button { padding: 9px 14px; border: 1px solid #cfd5df; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
+  #status { position: absolute; bottom: 10px; left: 10px; right: 10px; z-index: 1000; background: rgba(255,255,255,.92); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #44445a; }
+  .badge { position:absolute; top: 56px; right: 10px; z-index: 1000; background: rgba(255,255,255,.9); border-radius: 6px; padding: 3px 8px; font-size: 11px; color:#6b6b80 }
+</style>
+</head>
+<body>
+<div id="bar"><input id="q" placeholder="Search an address or place… (Enter)" /><button onclick="search()">🔍 Search</button><button onclick="locate()">📍 My location</button></div>
+<div class="badge">OSM · OpenStreetMap tiles · Nominatim search</div>
+<div id="map"></div>
+<div id="status">Click the map to place the pin. Drag the pin to adjust.</div>
+<script>
+  const init = window.__init || { lat: 19.2437, lng: 73.1355, radius: 150, hasPin: false, name: "" };
+  const map = L.map('map', { zoomControl: true }).setView([init.lat, init.lng], init.hasPin ? 16 : 12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }).addTo(map);
+  let marker = null, circle = null, radius = init.radius;
+  function post(kind, extra) { try { window.chrome.webview.postMessage(Object.assign({ kind }, extra || {})); } catch (e) {} }
+  function place(lat, lng, label) {
+    if (!marker) {
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('dragend', () => { const p = marker.getLatLng(); place(p.lat, p.lng); });
+    } else marker.setLatLng([lat, lng]);
+    if (!circle) circle = L.circle([lat, lng], { radius, color: '#1A3E8C', fillColor: '#1A3E8C', fillOpacity: 0.12 }).addTo(map);
+    else { circle.setLatLng([lat, lng]); circle.setRadius(radius); }
+    document.getElementById('status').textContent = (label ? label + ' · ' : '') + lat.toFixed(6) + ', ' + lng.toFixed(6) + ' · radius ' + radius + ' m';
+    post('pin', { lat, lng });
+  }
+  window.setRadius = function (r) { radius = r; if (marker) { const p = marker.getLatLng(); place(p.lat, p.lng); } };
+  map.on('click', e => place(e.latlng.lat, e.latlng.lng));
+  if (init.hasPin) place(init.lat, init.lng, init.name);
+  async function search() {
+    const q = document.getElementById('q').value.trim(); if (!q) return;
+    document.getElementById('status').textContent = 'Searching…';
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q), { headers: { 'Accept-Language': 'en' } });
+      const j = await r.json();
+      if (!j.length) { document.getElementById('status').textContent = 'Nothing found for “' + q + '”.'; return; }
+      const lat = parseFloat(j[0].lat), lng = parseFloat(j[0].lon);
+      map.setView([lat, lng], 16); place(lat, lng, 'Found via OSM: ' + j[0].display_name.split(',').slice(0, 3).join(','));
+    } catch (e) { document.getElementById('status').textContent = 'Search failed (offline?).'; }
+  }
+  function locate() {
+    if (!navigator.geolocation) { document.getElementById('status').textContent = 'No location on this PC.'; return; }
+    navigator.geolocation.getCurrentPosition(p => { map.setView([p.coords.latitude, p.coords.longitude], 16); place(p.coords.latitude, p.coords.longitude, 'Your position (±' + Math.round(p.coords.accuracy) + ' m)'); },
+      () => document.getElementById('status').textContent = 'Location denied or unavailable on this PC.');
+  }
+  document.getElementById('q').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+</script>
+</body>
+</html>

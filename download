@@ -1,0 +1,23 @@
+# ── .NET build output ──
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+TestResults/
+
+# ── Release artifacts (built by CI / publish scripts, never committed) ──
+*.exe
+*.exe.part*
+*.zip
+
+# ── Secrets: a downloaded Google OAuth "Desktop app" client ──
+client_secret*.json
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Firebase config: never committed (repo rule) ──
+google-services.json

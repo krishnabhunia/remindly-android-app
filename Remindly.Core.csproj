@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Remindly.Core</RootNamespace>
+    <AssemblyName>Remindly.Core</AssemblyName>
+    <NoWarn>$(NoWarn);CA1416;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Firestore v1 gRPC surface (Listen / Commit / RunQuery) driven with the user's Firebase ID token. -->
+    <PackageReference Include="Google.Cloud.Firestore.V1" Version="4.4.0" />
+    <!-- DPAPI for the refresh token + OAuth client secret at rest (Windows only at runtime). -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Sync\google-services.json" LogicalName="google-services.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <Using Include="System.Text.Json" />
+    <Using Include="System.Text.Json.Serialization" />
+  </ItemGroup>
+
+</Project>

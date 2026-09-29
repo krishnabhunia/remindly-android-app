@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- WinForms only for NotifyIcon (system tray) + SoundPlayer; no WinForms UI is shown. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Remindly.App</RootNamespace>
+    <AssemblyName>Remindly</AssemblyName>
+    <AssemblyTitle>Remindly for Windows</AssemblyTitle>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <StartupObject>Remindly.App.Program</StartupObject>
+
+    <!-- Cross-compiled from Linux/macOS as well as Windows. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <SelfContained>true</SelfContained>
+
+    <!-- Single portable EXE. Native libraries are extracted to %TEMP%\.net on first run. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>embedded</DebugType>
+    <UseAppHost>true</UseAppHost>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CA1416;WFO1000;WFAC010</NoWarn> <!-- WFAC010: WinForms analyzer objects to the manifest DPI block, but WPF reads DPI awareness from the manifest by design (WinForms is only used for the tray icon) -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System.IO" />
+    <!-- WinForms is referenced only for NotifyIcon/SoundPlayer; keep its namespace out of the implicit usings. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Remindly.Core\Remindly.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\app-256.png" />
+    <EmbeddedResource Include="Assets\ring.wav" LogicalName="ring.wav" />
+    <EmbeddedResource Include="Assets\alarm.wav" LogicalName="alarm.wav" />
+    <EmbeddedResource Include="Assets\notify.wav" LogicalName="notify.wav" />
+    <EmbeddedResource Include="Assets\map.html" LogicalName="map.html" />
+  </ItemGroup>
+
+</Project>
