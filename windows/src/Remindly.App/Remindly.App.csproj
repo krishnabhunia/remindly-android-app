@@ -39,7 +39,7 @@
     <ProjectReference Include="..\Remindly.Core\Remindly.Core.csproj" />
   </ItemGroup>
 
-  <!-- Program.Main is the entry point (single instance, --exit, --smoke-test), so App.xaml must not
+  <!-- Program.Main is the entry point (single instance, the exit and smoke-test switches), so App.xaml must not
        generate a second Main: compile it as a plain page; Program calls InitializeComponent itself. -->
   <ItemGroup>
     <ApplicationDefinition Remove="App.xaml" />
