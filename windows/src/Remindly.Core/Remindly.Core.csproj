@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Pure logic + storage + update checks. Cross-platform TFM so the unit tests run on any OS. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Remindly.Core</RootNamespace>
+    <AssemblyName>Remindly.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Remindly.Core.Tests" />
+  </ItemGroup>
+
+</Project>

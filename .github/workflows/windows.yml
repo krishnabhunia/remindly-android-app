@@ -1,0 +1,240 @@
+# Remindly for Windows — build, test and (on merge to main) release. Runs by itself:
+#
+#   • pull request touching windows/**  → unit tests, UI smoke test, installer + upgrade-while-running test,
+#                                          the deployment zip as a downloadable artifact. Nothing is published.
+#   • merge (push) to main              → the same checks, then — when <Version> in windows/Directory.Build.props
+#                                          has no win-v<Version> release yet — GitHub Release win-v<Version> with
+#                                          Remindly-Windows-<Version>.zip (+ .sha256). Installed copies with
+#                                          "Auto update" on pick it up on their next daily check.
+#   • Actions → "Windows app" → Run workflow: build + checks (publish = on also releases a new version).
+#
+# The deployment zip holds exactly two folders:
+#   installer/Remindly-Setup-<Version>.exe   portable/Remindly.exe
+#
+# Windows releases are never marked "Latest": the Android app's releases (tags vX.Y) own that slot.
+name: Windows app
+
+on:
+  push:
+    branches: [main]
+    paths: ['windows/**', '.github/workflows/windows.yml']
+  pull_request:
+    branches: [main]
+    paths: ['windows/**', '.github/workflows/windows.yml']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a GitHub Release when this version is not released yet"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: windows
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # tags: is this version released already?
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Read the version
+        id: ver
+        run: |
+          $v = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version
+          if (-not ($v -match '^\d+\.\d+\.\d+$')) { throw "Directory.Build.props <Version> '$v' is not X.Y.Z" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          "tag=win-v$v" >> $env:GITHUB_OUTPUT
+          "zip=Remindly-Windows-$v.zip" >> $env:GITHUB_OUTPUT
+          Write-Host "Remindly for Windows $v"
+
+      - name: Release needed?
+        id: rel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ steps.ver.outputs.tag }}"
+          $want = ("${{ github.event_name }}" -eq "push" -and "${{ github.ref }}" -eq "refs/heads/main") -or
+                  ("${{ github.event_name }}" -eq "workflow_dispatch" -and "${{ inputs.publish }}" -eq "true")
+          $exists = $false
+          git rev-parse -q --verify "refs/tags/$tag" | Out-Null
+          if ($LASTEXITCODE -eq 0) { $exists = $true }
+          gh release view $tag --repo "${{ github.repository }}" 2>$null | Out-Null
+          if ($LASTEXITCODE -eq 0) { $exists = $true }
+          $publish = $want -and -not $exists
+          if ($want -and $exists) { Write-Host "::notice::$tag is already released — building and testing only. Bump <Version> to release." }
+          "publish=$($publish.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+          Write-Host "publish=$publish"
+          $global:LASTEXITCODE = 0
+
+      - name: Changelog has this version
+        run: |
+          $v = [regex]::Escape("${{ steps.ver.outputs.version }}")
+          if (-not (Select-String -Path CHANGELOG.md -Pattern "^## $v\b" -Quiet)) { throw "windows/CHANGELOG.md has no '## ${{ steps.ver.outputs.version }}' section" }
+
+      - name: Restore
+        run: dotnet restore Remindly.sln
+
+      - name: Unit tests
+        run: dotnet test tests/Remindly.Core.Tests/Remindly.Core.Tests.csproj -c Release --no-restore --logger "trx;LogFileName=unit-tests.trx" --logger "console;verbosity=normal"
+
+      - name: Build the single-file exe (portable)
+        run: |
+          dotnet publish src/Remindly.App/Remindly.App.csproj -c Release -o out/portable
+          $exe = Get-Item out/portable/Remindly.exe
+          $fv = $exe.VersionInfo.ProductVersion
+          Write-Host "Remindly.exe $($exe.Length) bytes, version $fv"
+          if (-not $fv.StartsWith("${{ steps.ver.outputs.version }}")) { throw "exe version $fv does not match ${{ steps.ver.outputs.version }}" }
+          Get-ChildItem out/portable | Where-Object { $_.Name -ne 'Remindly.exe' } | Remove-Item -Force -Recurse
+
+      - name: UI smoke test (every screen, editor and the reminder card)
+        run: |
+          $shots = "$env:RUNNER_TEMP\smoke"
+          $data = "$env:RUNNER_TEMP\smoke-data"
+          $p = Start-Process -FilePath out/portable/Remindly.exe -ArgumentList @('--smoke-test', $shots, '--data-dir', $data) -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "smoke test timed out" }
+          Get-Content "$shots\smoke-result.txt" -ErrorAction SilentlyContinue
+          if (Test-Path "$data\remindly.log") { Get-Content "$data\remindly.log" -Tail 40 }
+          if ($p.ExitCode -ne 0) { throw "smoke test failed (exit $($p.ExitCode))" }
+          if (-not (Select-String -Path "$shots\smoke-result.txt" -Pattern 'PASSED' -Quiet)) { throw "smoke test did not pass" }
+
+      - name: Upload the smoke-test screenshots
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: smoke-screenshots-${{ steps.ver.outputs.version }}
+          path: ${{ runner.temp }}/smoke
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Build the installer (Inno Setup)
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y | Out-Null }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found" }
+          & $iscc "/DMyAppVersion=${{ steps.ver.outputs.version }}" "/DSourceDir=$PWD\out\portable" "/DOutputDir=$PWD\out\installer" installer\Remindly.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
+          Get-ChildItem out/installer
+
+      - name: Installer test — install, update while running, uninstall
+        run: |
+          $setup = (Get-Item "out/installer/Remindly-Setup-${{ steps.ver.outputs.version }}.exe").FullName
+          $dir = "$env:RUNNER_TEMP\RemindlyInstalled"
+          $data = "$env:RUNNER_TEMP\installer-data"
+          function Running { @(Get-Process -Name Remindly -ErrorAction SilentlyContinue).Count -gt 0 }
+
+          # 1. Fresh per-user install
+          $p = Start-Process $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/CURRENTUSER', '/NORESTART', "/DIR=$dir", '/TASKS=', "/LOG=$env:RUNNER_TEMP\setup1.log") -PassThru -Wait
+          if ($p.ExitCode -ne 0) { Get-Content "$env:RUNNER_TEMP\setup1.log" -Tail 60; throw "install failed ($($p.ExitCode))" }
+          if (-not (Test-Path "$dir\Remindly.exe")) { throw "Remindly.exe not installed" }
+          $marker = (Get-ItemProperty 'HKCU:\Software\Remindly').InstallDir
+          if ($marker.TrimEnd('\') -ne $dir.TrimEnd('\')) { throw "InstallDir marker '$marker' <> '$dir'" }
+          Write-Host "installed to $dir"
+
+          # 2. Start it (hidden in the tray) and run Setup again: it must detect the running copy,
+          #    close it, update in the background and start it again.
+          Start-Process "$dir\Remindly.exe" -ArgumentList @('--tray', '--data-dir', $data) | Out-Null
+          $t = 0; while (-not (Running) -and $t -lt 60) { Start-Sleep 1; $t++ }
+          if (-not (Running)) { throw "installed Remindly did not start" }
+          Start-Sleep 5
+          $before = (Get-Process -Name Remindly | Select-Object -First 1).Id
+          $p = Start-Process $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/CURRENTUSER', '/NORESTART', "/DIR=$dir", '/TASKS=', '/REMINDLYUPDATE=1', '/RELAUNCH=tray', "/LOG=$env:RUNNER_TEMP\setup2.log") -PassThru -Wait
+          Get-Content "$env:RUNNER_TEMP\setup2.log" | Select-String -Pattern 'Remindly' | ForEach-Object { $_.Line }
+          if ($p.ExitCode -ne 0) { throw "update-while-running failed ($($p.ExitCode))" }
+          if (-not (Select-String -Path "$env:RUNNER_TEMP\setup2.log" -Pattern 'previous Remindly is running' -Quiet)) { throw "Setup did not detect the running copy" }
+          $t = 0; while (-not (Running) -and $t -lt 60) { Start-Sleep 1; $t++ }
+          if (-not (Running)) { throw "Setup did not restart Remindly after the update" }
+          $after = (Get-Process -Name Remindly | Select-Object -First 1).Id
+          if ($after -eq $before) { throw "Remindly was not restarted (same process $before)" }
+          Write-Host "update while running: closed pid $before, restarted as pid $after"
+
+          # 3. Uninstall (closes the running copy first)
+          $unins = Get-ChildItem $dir -Filter 'unins*.exe' | Select-Object -First 1
+          $p = Start-Process $unins.FullName -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru -Wait
+          Start-Sleep 3
+          if (Test-Path "$dir\Remindly.exe") { throw "uninstall left Remindly.exe behind" }
+          if (Running) { throw "uninstall left Remindly running" }
+          Write-Host "uninstall OK"
+
+      - name: Package the deployment zip (installer/ + portable/ only)
+        id: zip
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $stage = "out/zip"
+          Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory "$stage/installer", "$stage/portable" | Out-Null
+          Copy-Item "out/installer/Remindly-Setup-$v.exe" "$stage/installer/"
+          Copy-Item "out/portable/Remindly.exe" "$stage/portable/"
+          New-Item -ItemType Directory out/dist -Force | Out-Null
+          $zip = "out/dist/${{ steps.ver.outputs.zip }}"
+          Compress-Archive -Path "$stage/installer", "$stage/portable" -DestinationPath $zip -CompressionLevel Optimal -Force
+          # Verify: exactly the two folders, the Setup in installer/, Remindly.exe in portable/.
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $z = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
+          $names = $z.Entries | ForEach-Object { $_.FullName.Replace('\', '/') }
+          $z.Dispose()
+          $names | ForEach-Object { Write-Host "  $_" }
+          $tops = $names | ForEach-Object { $_.Split('/')[0] } | Sort-Object -Unique
+          if (Compare-Object $tops @('installer', 'portable')) { throw "zip top level must be exactly installer/ and portable/: $($tops -join ', ')" }
+          if (-not ($names -contains "installer/Remindly-Setup-$v.exe")) { throw "installer/Remindly-Setup-$v.exe missing" }
+          if (-not ($names -contains "portable/Remindly.exe")) { throw "portable/Remindly.exe missing" }
+          $sha = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          "$sha  ${{ steps.ver.outputs.zip }}" | Out-File "$zip.sha256" -Encoding ascii -NoNewline
+          Write-Host "${{ steps.ver.outputs.zip }}  sha256 $sha"
+
+      - name: Upload the deployment zip
+        uses: actions/upload-artifact@v5
+        with:
+          name: Remindly-Windows-${{ steps.ver.outputs.version }}
+          path: |
+            windows/out/dist/${{ steps.ver.outputs.zip }}
+            windows/out/dist/${{ steps.ver.outputs.zip }}.sha256
+          retention-days: 30
+
+      - name: Release notes from windows/CHANGELOG.md
+        if: steps.rel.outputs.publish == 'true'
+        run: |
+          $v = [regex]::Escape("${{ steps.ver.outputs.version }}")
+          $out = @(); $in = $false
+          foreach ($line in Get-Content CHANGELOG.md -Encoding utf8) {
+            if ($line -match '^## ') { if ($in) { break }; $in = $line -match "^## $v\b"; continue }
+            if ($in) { $out += $line }
+          }
+          $out += ''
+          $out += '---'
+          $out += "Download **${{ steps.ver.outputs.zip }}**: ``installer/`` holds the Setup (Start menu, uninstaller, background auto-update), ``portable/`` holds Remindly.exe that runs from anywhere."
+          ($out -join "`n").Trim() | Out-File "$env:RUNNER_TEMP\notes.md" -Encoding utf8
+
+      - name: Publish GitHub Release ${{ steps.ver.outputs.tag }}
+        if: steps.rel.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.ver.outputs.tag }}" `
+            "out/dist/${{ steps.ver.outputs.zip }}" "out/dist/${{ steps.ver.outputs.zip }}.sha256" `
+            --repo "${{ github.repository }}" `
+            --target "${{ github.sha }}" `
+            --title "Remindly ${{ steps.ver.outputs.version }} for Windows" `
+            --notes-file "$env:RUNNER_TEMP\notes.md" `
+            --latest=false
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
+          Write-Host "::notice::Published ${{ steps.ver.outputs.tag }}"

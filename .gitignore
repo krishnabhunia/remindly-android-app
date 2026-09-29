@@ -19,3 +19,12 @@ captures/
 
 # the published build is tracked on purpose
 !releases/*.apk
+# --- Windows app (windows/) ---
+bin/
+obj/
+windows/out/
+TestResults/
+*.user
+.vs/
+# windows/build/ holds scripts, not build output
+!windows/build/
