@@ -222,6 +222,9 @@ data class Item(
     val calEventId: Long? = null,           // calendar sync mapping
     // Shop grouping label (v1.4)
     val group: String? = null,
+    // v2.11 (N48): the ShopList this Buy item belongs to (null = Unsorted). `group` keeps mirroring
+    // the list's NAME so older app versions and the Classic view still see the same grouping.
+    val listId: Long? = null,
     // state
     val done: Boolean = false,
     val doneAt: Long? = null,
@@ -431,10 +434,10 @@ fun settingsSectionVisible(filterKey: String?, key: String): Boolean = when (fil
         "appearance", "google", "backup", "errlog", "health", "tests", "bin", "details", "about")
     "TASKS" -> key in setOf("t-groups", "t-add", "t-cal")
     // v2.04 (N35): each Shop-mode tab owns its settings, like Tasks/Learn/Calls in Task mode.
-    "BUY" -> key in setOf("shop-buy", "s-groups", "s-add", "pin", "sharing")
+    "BUY" -> key in setOf("b-lists", "shop-buy", "s-groups", "s-add", "pin", "sharing")   // v2.11 (N48): + Lists
     "SHOPS" -> key in setOf("shop-geo", "location")
     "PRODUCTS" -> key in setOf("shop-data")
-    "SHOP" -> key in setOf("shop-buy", "s-groups", "s-add", "pin")   // legacy key = the Buy page
+    "SHOP" -> key in setOf("b-lists", "shop-buy", "s-groups", "s-add", "pin")   // legacy key = the Buy page
     "LEARN" -> key in setOf("l-groups", "l-add")
     "CALLS" -> key in setOf("callrem", "c-add", "c-hk", "c-al", "c-ge", "c-cl")
     else -> false
@@ -476,7 +479,12 @@ fun resetSettingsFor(s: AppSettings, filterKey: String?): AppSettings {
             shopNewDueDays = d.shopNewDueDays, shopNewDueMinutes = d.shopNewDueMinutes,
             shopDoneClearDays = d.shopDoneClearDays,
             shopCheckoutCalc = d.shopCheckoutCalc, shopCheapestHint = d.shopCheapestHint,
-            shopSort = d.shopSort
+            shopSort = d.shopSort,
+            // v2.11 (N48): Lists + Sharing rows (never the list records or the default list — data).
+            buyOpensOn = d.buyOpensOn, buyReopenLast = d.buyReopenLast, buyShowUnsorted = d.buyShowUnsorted,
+            buyCardTotal = d.buyCardTotal, buyDupWarn = d.buyDupWarn, buyListSort = d.buyListSort, buyInnerSort = d.buyInnerSort,
+            shareWaIcon = d.shareWaIcon, shareWaApp = d.shareWaApp, shareUrgentTag = d.shareUrgentTag,
+            shareBoughtTag = d.shareBoughtTag, shareHeadingSuffix = d.shareHeadingSuffix
         )
         "SHOPS" -> s.copy(
             shopArriveAlert = d.shopArriveAlert, shopNewRadius = d.shopNewRadius,
@@ -946,7 +954,24 @@ data class CallReminder(
 }
 
 data class AppSettings(
-    val ver: Int = 42,
+    val ver: Int = 43,
+    // v2.11 (N48): Buy tab LISTS FIRST. The list records ride the settings doc (already synced and
+    // backed up); Sync merges them per id, latest-wins. Buy-only settings (no other tab has lists).
+    val shopLists: List<ShopList> = emptyList(),
+    val buyOpensOn: String = "LISTS",           // LISTS | CLASSIC (today's flat view)
+    val buyReopenLast: Boolean = false,         // skip the Lists screen and reopen the last list
+    val buyShowUnsorted: Boolean = true,        // the dashed "Unsorted" card (auto-hides when empty)
+    val buyCardTotal: Boolean = true,           // "≈ ₹" estimate on each list card
+    val buyDupWarn: Boolean = true,             // warn when an item already sits in another list
+    val buyListSort: String = "RECENT",         // RECENT | AZ | CUSTOM
+    val buyInnerSort: String = "SHOP",          // inside a list: SHOP | CATEGORY | PRIORITY | DATE | NONE
+    val shopDefaultListId: Long? = null,        // share-in / widget default (replaces shopDefaultGroup)
+    // v2.11 (N48): list sharing — header icons + the "List_Name:-" text format.
+    val shareWaIcon: Boolean = true,            // the one-tap WhatsApp icon in a list header
+    val shareWaApp: String = "WHATSAPP",        // WHATSAPP | BUSINESS (used when both are installed)
+    val shareUrgentTag: Boolean = true,         // " - Urgent" on priority-Urgent lines
+    val shareBoughtTag: Boolean = true,         // " - Bought" on bought lines
+    val shareHeadingSuffix: String = ":-",      // text after the list name
     // v2.9 (N47): in-app updates from the GitHub repo's releases/version.json feed.
     val updateAutoCheck: Boolean = true,
     val updateWifiOnly: Boolean = true,
@@ -2041,6 +2066,13 @@ fun healSettings(a: AppSettings): AppSettings = a.copy(
     // v2.7 (N43): per-tab group-check overrides — null Strings on pre-40 JSON would break copy().
     tasksGroupCheck = a.tasksGroupCheck ?: "INHERIT",
     groupIcons = a.groupIcons ?: emptyMap(),           // v2.9: null Map on pre-42 JSON
+    // v2.11 (N48): null List/Strings on pre-43 JSON; every list record is healed too.
+    shopLists = (a.shopLists ?: emptyList()).mapNotNull { runCatching { healShopList(it) }.getOrNull() },
+    buyOpensOn = if (a.buyOpensOn == "CLASSIC") "CLASSIC" else "LISTS",
+    buyListSort = a.buyListSort?.takeIf { it in setOf("RECENT", "AZ", "CUSTOM") } ?: "RECENT",
+    buyInnerSort = a.buyInnerSort?.takeIf { it in setOf("SHOP", "CATEGORY", "PRIORITY", "DATE", "NONE") } ?: "SHOP",
+    shareWaApp = if (a.shareWaApp == "BUSINESS") "BUSINESS" else "WHATSAPP",
+    shareHeadingSuffix = a.shareHeadingSuffix ?: ":-",
     shopDefaultGroup = a.shopDefaultGroup ?: "",
     learnGroupCheck = a.learnGroupCheck ?: "INHERIT",
     shopGroupCheck = a.shopGroupCheck ?: "INHERIT",

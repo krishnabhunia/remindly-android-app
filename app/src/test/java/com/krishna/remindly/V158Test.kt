@@ -6,6 +6,6 @@ import org.junit.Test
 /** v1.58 schema pin. Parser tests removed in v1.69 with the rules machinery (Q4/Q5 purge). */
 class V158Test {
     @Test fun schema_version_is_pinned() {
-        assertEquals(42, AppSettings().ver)   // v2.04 schema
+        assertEquals(43, AppSettings().ver)   // v2.04 schema
     }
 }

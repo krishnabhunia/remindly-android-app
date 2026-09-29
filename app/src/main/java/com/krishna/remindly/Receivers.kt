@@ -551,6 +551,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 val shopS = ShopStore.get(id) ?: return
                 Alerts.fireShopArrival(context, shopS, snoozed = true)
             }
+            AlarmScheduler.TYPE_SHOP_DAY -> ShopListStore.fireShoppingDay(context, id)   // v2.11 (N48)
             AlarmScheduler.TYPE_CALL_DEMOTED -> {
                 val rD = CallStore.get(id) ?: return
                 if (rD.done || rD.deletedAt != null) return

@@ -38,7 +38,9 @@ data class UiState(
     // v2.10 (N9): per-device permission record — which system dialogs were shown (or granted at
     // some point) and which pre-prompts were seen. Only this tells "never asked" from "blocked".
     val permAsked: Set<String> = emptySet(),
-    val permPrompted: Set<String> = emptySet()
+    val permPrompted: Set<String> = emptySet(),
+    // v2.11 (N48): the Buy list last opened (per device; "Reopen last list" and in-app navigation).
+    val openListId: Long? = null
 )
 
 // Gson-safe twin: every field nullable, defaults reapplied on load.
@@ -59,7 +61,8 @@ private data class UiStateRaw(
     val updateLastCheck: Long?,
     val updateFeedJson: String?,
     val permAsked: Set<String>?,
-    val permPrompted: Set<String>?
+    val permPrompted: Set<String>?,
+    val openListId: Long?
 )
 
 /** Gson-safe twin of GeoUsage (fields may be null in old/partial JSON). */
@@ -93,7 +96,8 @@ object UiStore {
                 updateLastCheck = r.updateLastCheck ?: 0L,
                 updateFeedJson = r.updateFeedJson,
                 permAsked = r.permAsked ?: emptySet(),
-                permPrompted = r.permPrompted ?: emptySet()
+                permPrompted = r.permPrompted ?: emptySet(),
+                openListId = r.openListId
             )
         }
     }

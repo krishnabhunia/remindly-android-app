@@ -102,7 +102,7 @@ class V29Test {
     }
 
     @Test fun v29_schemaIs42() {
-        assertEquals(42, AppSettings().ver)
-        assertEquals(42, healSettings(AppSettings()).ver)
+        assertEquals(43, AppSettings().ver)
+        assertEquals(43, healSettings(AppSettings()).ver)
     }
 }

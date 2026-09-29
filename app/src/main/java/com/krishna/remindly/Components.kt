@@ -984,7 +984,10 @@ private fun ItemChipList(item: Item, pal: TabPalette, isDoneList: Boolean) {
     val settings = SettingsStore.s.collectAsState().value
     val cf = cardFieldsFor(settings, item.tab)   // v1.44 UI 1
     // v1.49 item 4: never repeat as a chip what the list is already grouped by.
-    val suppress = suppressedChip(sortOf(settings, item.tab), item.tab)
+    // v2.11 (N48): in Lists mode a Buy card sits inside its list — the list-name chip is noise, and the
+    // shop chip hides when the list is grouped By Shop (same rule the Classic view uses).
+    val listsMode = item.tab == Tab.SHOP && settings.buyOpensOn == "LISTS"
+    val suppress = if (listsMode) (if (settings.buyInnerSort == "SHOP") "SHOP" else "GROUP") else suppressedChip(sortOf(settings, item.tab), item.tab)
     // v1.49 item 2: Best U.P rank — labels only, the list is NOT reordered.
     val upRank = if (item.tab == Tab.SHOP)
         bestUpRanks(ItemStore.items.collectAsState().value)[item.id] else null
@@ -1013,7 +1016,7 @@ private fun ItemChipList(item: Item, pal: TabPalette, isDoneList: Boolean) {
             "returns " + formatDay(item.dueAt) else lbl0
         chips.add { MetaChip("↻ " + lbl.substringBefore(" · "), GreenSoft, ShopTeal) }
     }
-    if ((item.tab == Tab.SHOP || item.tab == Tab.TASKS) && !item.group.isNullOrBlank() && suppress != "GROUP") {
+    if ((item.tab == Tab.SHOP || item.tab == Tab.TASKS) && !item.group.isNullOrBlank() && suppress != "GROUP" && !listsMode) {
         chips.add { MetaChip(item.group, TasksSoft, PurpleInk) }
     }
     if (item.tab == Tab.LEARN && !item.topic.isNullOrBlank() && suppress != "TOPIC") {

@@ -1,4 +1,30 @@
-# Remindly 2.10 — 28-Sep-2026
+# Remindly 2.11 — 29-Sep-2026
+
+**The Buy tab now opens on your Lists.** Make a list first (Groceries, Monthly stock, a party…),
+then add items inside it. Your existing groups became lists automatically; items without a group
+wait in an "Unsorted" card until you move them.
+
+- **Lists screen:** each list shows what's left to buy, a progress bar, where the items are bought,
+  an estimated total and its shopping day. Sort by Recent, A–Z or your own order; pin favourites.
+- **New list:** name, icon, usual shop, a shopping day (a reminder at 9 AM that day) and Private
+  (every item PIN-locked).
+- **List menu** (long-press or ⋮): send to WhatsApp, share, pin, rename, duplicate, restart (bought
+  items go back to To buy), mark all bought, merge into another list, delete. Deleting asks what to
+  do with the items — the default keeps them in Unsorted — and can be undone.
+- **Inside a list:** everything you add belongs to it. Group by shop, category, priority or date.
+  "Recently bought in this list" suggestions, and a warning when the item is already in another list.
+  The item editor's Group field is now a List picker; moving an item says where it went, with Undo.
+- **Sharing:** a Share icon and a one-tap WhatsApp icon in every list. The text is
+  "Groceries:-" followed by numbered lines like "1. Milk - 2 / L - Urgent - Bought".
+  Long-press the WhatsApp icon to preview and change what is included.
+- **Buy Now** on arriving at a shop now shows that shop's items from every list, grouped by list.
+- A list someone shared with you can be added to your own lists.
+- Buy ⚙ → Lists and Buy ⚙ → Sharing a list hold the new options. "Classic" brings back the old
+  single flat Buy list.
+
+Source: https://github.com/krishnabhunia/remindly-android-app
+
+# Previous release — 2.10 — 28-Sep-2026
 
 **Every permission is now optional, asked when you use it, and explained first.** Before Android's
 question appears, Remindly says what the permission is for and what still works if you say no.
