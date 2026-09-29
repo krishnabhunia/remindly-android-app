@@ -68,9 +68,9 @@ Any item that cannot honour the rule states WHY in its entry.
 
 ## WAITING QUEUE
 
-NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), N48 (design — F1–F11 answers pending), SPIKE-2 (PARKED — silent). N9 + N6pt2 SHIPPED as 2.10.
+NEXT: N29 (needs Krishna's Firestore rules paste), SPIKE-1, N46 (design), N48 (design settled 29-Sep — all ★ defaults; waiting for build trigger), SPIKE-2 (PARKED — silent). N9 + N6pt2 SHIPPED as 2.10.
 
-### N48 — Buy tab: LISTS FIRST, then items inside a list — QUEUED at design stage
+### N48 — Buy tab: LISTS FIRST, then items inside a list — QUEUED, design SETTLED (defaults)
 ### Krishna 29-Sep-2026: "The shopping tab is directly adding the item card decks to directly purchase,
 ### but I want to change that first Lists to be added and then inside that list items to be add"
 ### (design/n48-lists-first-design-v1.html, rounds 1–2) — "Add to queue" 29-Sep-2026 (×2). NO BUILD until trigger.
@@ -137,6 +137,19 @@ FORMAT: "<name>:-", blank line, "N. <title>[ - <qty>[ / <unit>]][ - Urgent][ - B
 QUESTIONS: F7 one-tap direct (★ yes, long-press = preview); F8 Urgent = ★ URGENT only / High+Urgent;
   F9 to-buy marker ★ none / "- To buy"; F10 order ★ screen order, bought last; F11 WhatsApp icon on list
   cards ★ no (menu only).
+DECISIONS — Krishna 29-Sep-2026: "use defaults" (every ★ below is now the spec, not a proposal):
+  F1 ShopList registry record (option A) · F2 list-less items → Unsorted card · F3 Classic flat view kept
+  as a setting (default Lists) · F4 one list per item + cross-list duplicate warning · F5 shopping-day
+  reminder per list included · F6 Restart list + Merge both included · F7 WhatsApp icon = one-tap direct
+  send, long-press = preview · F8 "Urgent" tag = priority URGENT only · F9 no marker on to-buy lines ·
+  F10 screen order, bought last · F11 WhatsApp icon NOT on list cards (card menu only).
+GAPS closed with defaults (raised after round 2):
+  G1 accepted incoming share (N17 SharedHub) → lands as a NEW list named after the sender's list.
+  G2 a Private list locks ALL its items (item-level Personal still works inside a non-private list).
+  G3 home-screen widget shows the default list (the share-in / widget default of ⚑ change 5).
+  G4 export JSON gains `shopLists` + Item.listId; ≤2.10 backups import (migration re-runs); a NEW backup
+     read by an OLD app loses list structure only — accepted, called out in release notes.
+  G5 N46 (shared editing) stays parked; to be re-specced per ShopList after N48 ships.
 
 ### INFRA — APK built on GitHub Actions — DONE 28-Sep-2026 (no app version change)
 ### Krishna 28-Sep-2026: "can you build the APK in GitHub action section?"
