@@ -108,6 +108,7 @@ jobs:
           Get-ChildItem out/portable | Where-Object { $_.Name -ne 'Remindly.exe' } | Remove-Item -Force -Recurse
 
       - name: UI smoke test (every screen, editor and the reminder card)
+        timeout-minutes: 10
         run: |
           $shots = "$env:RUNNER_TEMP\smoke"
           $data = "$env:RUNNER_TEMP\smoke-data"
@@ -137,15 +138,22 @@ jobs:
           Get-ChildItem out/installer
 
       - name: Installer test — install, update while running, uninstall
+        timeout-minutes: 10
         run: |
           $setup = (Get-Item "out/installer/Remindly-Setup-${{ steps.ver.outputs.version }}.exe").FullName
           $dir = "$env:RUNNER_TEMP\RemindlyInstalled"
           $data = "$env:RUNNER_TEMP\installer-data"
           function Running { @(Get-Process -Name Remindly -ErrorAction SilentlyContinue).Count -gt 0 }
+          # Waits for THIS process only (Start-Process -Wait would also wait for the Remindly that Setup restarts).
+          function RunAndWait([string]$file, [string[]]$argv, [int]$seconds = 300) {
+            $proc = Start-Process $file -ArgumentList $argv -PassThru
+            if (-not $proc.WaitForExit($seconds * 1000)) { $proc.Kill(); throw "$([IO.Path]::GetFileName($file)) timed out after $seconds s" }
+            return $proc.ExitCode
+          }
 
           # 1. Fresh per-user install
-          $p = Start-Process $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/CURRENTUSER', '/NORESTART', "/DIR=$dir", '/TASKS=', "/LOG=$env:RUNNER_TEMP\setup1.log") -PassThru -Wait
-          if ($p.ExitCode -ne 0) { Get-Content "$env:RUNNER_TEMP\setup1.log" -Tail 60; throw "install failed ($($p.ExitCode))" }
+          $code = RunAndWait $setup @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/CURRENTUSER', '/NORESTART', "/DIR=$dir", '/TASKS=', "/LOG=$env:RUNNER_TEMP\setup1.log")
+          if ($code -ne 0) { Get-Content "$env:RUNNER_TEMP\setup1.log" -Tail 60; throw "install failed ($code)" }
           if (-not (Test-Path "$dir\Remindly.exe")) { throw "Remindly.exe not installed" }
           $marker = (Get-ItemProperty 'HKCU:\Software\Remindly').InstallDir
           if ($marker.TrimEnd('\') -ne $dir.TrimEnd('\')) { throw "InstallDir marker '$marker' <> '$dir'" }
@@ -158,9 +166,9 @@ jobs:
           if (-not (Running)) { throw "installed Remindly did not start" }
           Start-Sleep 5
           $before = (Get-Process -Name Remindly | Select-Object -First 1).Id
-          $p = Start-Process $setup -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/CURRENTUSER', '/NORESTART', "/DIR=$dir", '/TASKS=', '/REMINDLYUPDATE=1', '/RELAUNCH=tray', "/LOG=$env:RUNNER_TEMP\setup2.log") -PassThru -Wait
+          $code = RunAndWait $setup @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/CURRENTUSER', '/NORESTART', "/DIR=$dir", '/TASKS=', '/REMINDLYUPDATE=1', '/RELAUNCH=tray', "/LOG=$env:RUNNER_TEMP\setup2.log")
           Get-Content "$env:RUNNER_TEMP\setup2.log" | Select-String -Pattern 'Remindly' | ForEach-Object { $_.Line }
-          if ($p.ExitCode -ne 0) { throw "update-while-running failed ($($p.ExitCode))" }
+          if ($code -ne 0) { throw "update-while-running failed ($code)" }
           if (-not (Select-String -Path "$env:RUNNER_TEMP\setup2.log" -Pattern 'previous Remindly is running' -Quiet)) { throw "Setup did not detect the running copy" }
           $t = 0; while (-not (Running) -and $t -lt 60) { Start-Sleep 1; $t++ }
           if (-not (Running)) { throw "Setup did not restart Remindly after the update" }
@@ -170,7 +178,9 @@ jobs:
 
           # 3. Uninstall (closes the running copy first)
           $unins = Get-ChildItem $dir -Filter 'unins*.exe' | Select-Object -First 1
-          $p = Start-Process $unins.FullName -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru -Wait
+          # The uninstaller copies itself to %TEMP% and returns at once; wait until the files are gone.
+          $code = RunAndWait $unins.FullName @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART')
+          $t = 0; while ((Test-Path "$dir\Remindly.exe") -and $t -lt 60) { Start-Sleep 1; $t++ }
           Start-Sleep 3
           if (Test-Path "$dir\Remindly.exe") { throw "uninstall left Remindly.exe behind" }
           if (Running) { throw "uninstall left Remindly running" }
