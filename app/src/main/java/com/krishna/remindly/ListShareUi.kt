@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
@@ -86,6 +87,7 @@ fun shareTextViaChooser(context: Context, text: String) {
 }
 
 /** S2: the preview sheet behind the Share icon (and long-press on the WhatsApp icon). */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListTextShareSheet(name: String, items: List<Item>, pal: TabPalette, isLocked: (Item) -> Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current

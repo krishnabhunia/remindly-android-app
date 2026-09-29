@@ -463,6 +463,7 @@ fun ListEditorSheet(list: ShopList?, prefillName: String, pal: TabPalette, onDis
 
 // ---------------------------------------------------------------- L5 list menu
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListMenuSheet(
     l: ShopList, items: List<Item>, settings: AppSettings, pal: TabPalette,
@@ -509,6 +510,7 @@ val WhatsAppGreenInk = Color(0xFF1B7F46)   // hex-ok: brand colour, readable on 
 
 // ---------------------------------------------------------------- L6 delete
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeleteListSheet(l: ShopList, pal: TabPalette, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -559,6 +561,7 @@ private fun ListChips(lists: List<ShopList>, selected: Long?, onPick: (ShopList)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MergeListSheet(l: ShopList, pal: TabPalette, onDismiss: () -> Unit) {
     val context = LocalContext.current
