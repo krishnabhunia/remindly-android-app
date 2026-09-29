@@ -1,0 +1,117 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════ Remindly-specific tokens (theme-independent brand accents) ═══════════════ -->
+    <SolidColorBrush x:Key="Brush.Remindly.Red" Color="#E53935" />
+    <SolidColorBrush x:Key="Brush.Remindly.Blue" Color="#1A3E8C" />
+    <SolidColorBrush x:Key="Brush.Priority.Urgent" Color="#C62828" />
+    <SolidColorBrush x:Key="Brush.Priority.Urgent.Bg" Color="#FBE2E2" />
+    <SolidColorBrush x:Key="Brush.Priority.High" Color="#9A6A00" />
+    <SolidColorBrush x:Key="Brush.Priority.High.Bg" Color="#FFF3E0" />
+    <SolidColorBrush x:Key="Brush.Priority.Medium" Color="#1A56DB" />
+    <SolidColorBrush x:Key="Brush.Priority.Medium.Bg" Color="#E8F0FE" />
+    <SolidColorBrush x:Key="Brush.Priority.Low" Color="#0B6E4F" />
+    <SolidColorBrush x:Key="Brush.Priority.Low.Bg" Color="#E7F6EC" />
+    <SolidColorBrush x:Key="Brush.Shop" Color="#0B6E4F" />
+    <SolidColorBrush x:Key="Brush.Shop.Subtle" Color="#E7F6EC" />
+    <SolidColorBrush x:Key="Brush.Learn" Color="#9A6A00" />
+    <SolidColorBrush x:Key="Brush.Learn.Subtle" Color="#FFF3E0" />
+    <SolidColorBrush x:Key="Brush.Call" Color="#1E88E5" />
+    <SolidColorBrush x:Key="Brush.Call.Subtle" Color="#E3F2FD" />
+    <SolidColorBrush x:Key="Brush.Alarm" Color="#D32F2F" />
+    <SolidColorBrush x:Key="Brush.Ring" Color="#EF6C00" />
+
+    <!-- Segmented Active | Done | Buy Now -->
+    <Style x:Key="Button.Segment" TargetType="RadioButton" BasedOn="{StaticResource Button.Chip}">
+        <Setter Property="Padding" Value="14,5" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="15" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Small toggle chips (weekdays, alert type, schedule kind) -->
+    <Style x:Key="Button.SmallChip" TargetType="ToggleButton" BasedOn="{StaticResource Button.Chip}">
+        <Setter Property="Padding" Value="9,3" />
+        <Setter Property="MinHeight" Value="26" />
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- A list row card -->
+    <Style x:Key="Row" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Brush.Card.Background}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Card.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Brush.Card.Hover}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Hover-revealed row action button -->
+    <Style x:Key="Button.RowAction" TargetType="Button" BasedOn="{StaticResource Button.Ghost}">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Icons}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="7,4" />
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="MinWidth" Value="28" />
+        <Setter Property="Margin" Value="2,0,0,0" />
+    </Style>
+
+    <!-- Field label inside editors -->
+    <Style x:Key="Text.Field" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+        <Setter Property="Margin" Value="0,10,0,4" />
+    </Style>
+
+    <!-- Settings section card header -->
+    <Style x:Key="Text.SettingsSection" TargetType="TextBlock" BasedOn="{StaticResource Text.Section}">
+        <Setter Property="Margin" Value="0,0,0,10" />
+    </Style>
+    <Style x:Key="Text.SettingsHint" TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+        <Setter Property="Margin" Value="0,2,0,8" />
+    </Style>
+
+    <!-- Toggle switch look for CheckBox in settings -->
+    <Style x:Key="Switch" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,6" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <DockPanel LastChildFill="True" Background="Transparent">
+                        <Border x:Name="Track" DockPanel.Dock="Right" Width="40" Height="22" CornerRadius="11" Background="{DynamicResource Brush.Control.Border}" VerticalAlignment="Center" Margin="12,0,0,0">
+                            <Ellipse x:Name="Knob" Width="16" Height="16" Fill="White" HorizontalAlignment="Left" Margin="3,0,0,0" />
+                        </Border>
+                        <ContentPresenter VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </DockPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource Brush.Accent}" />
+                            <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
+                            <Setter TargetName="Knob" Property="Margin" Value="0,0,3,0" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

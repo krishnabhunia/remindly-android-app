@@ -1,0 +1,191 @@
+<UserControl x:Class="Remindly.App.Views.ItemListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ItemListViewModel}">
+    <Grid Margin="24,18,24,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBox Style="{StaticResource TextBox.Search}" Width="220" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Tag="Search" />
+                <Button Style="{StaticResource Button.Secondary}" Command="{Binding CycleSortCommand}" Margin="8,0,0,0" ToolTip="Change the sort (Date · Group · Priority)">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8CB;" Style="{StaticResource Icon}" FontSize="13" /><TextBlock Text="{Binding SortLabel}" Margin="6,0,0,0" /></StackPanel>
+                </Button>
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Title}" />
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource Text.Subtitle}" Margin="0,2,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Quick add -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBox Style="{StaticResource TextBox.Base}" Text="{Binding QuickAdd, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding AddPlaceholder}" MinHeight="38" FontSize="14">
+                <TextBox.InputBindings><KeyBinding Key="Return" Command="{Binding AddCommand}" /></TextBox.InputBindings>
+            </TextBox>
+            <Button Grid.Column="1" Style="{StaticResource Button.Primary}" Command="{Binding AddCommand}" Margin="8,0,0,0" MinHeight="38" Content="Add" />
+            <Button Grid.Column="2" Style="{StaticResource Button.Secondary}" Command="{Binding AddFullCommand}" Margin="6,0,0,0" MinHeight="38" ToolTip="Open the full editor">
+                <TextBlock Text="&#xE70F;" Style="{StaticResource Icon}" FontSize="13" />
+            </Button>
+        </Grid>
+
+        <!-- Active | Buy Now | Done -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+            <RadioButton Style="{StaticResource Button.Segment}" GroupName="View" Content="Active" IsChecked="{Binding ShowDone, Converter={StaticResource InvBool}, Mode=OneWay}" Command="{Binding ShowActiveCommand}" />
+            <RadioButton Style="{StaticResource Button.Segment}" GroupName="View" IsChecked="{Binding BuyNowActive, Mode=OneWay}" Visibility="{Binding BuyNowActive, Converter={StaticResource BoolToVis}}" Command="{Binding ShowActiveCommand}">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="{Binding BuyNowLabel}" /><Button Style="{StaticResource Button.Link}" Content="&#xE8BB;" FontFamily="{StaticResource Font.Icons}" FontSize="9" Margin="8,0,0,0" Padding="2" Command="{Binding HideBuyNowCommand}" ToolTip="Hide Buy Now" /></StackPanel>
+            </RadioButton>
+            <RadioButton Style="{StaticResource Button.Segment}" GroupName="View" Content="Done" IsChecked="{Binding ShowDone, Mode=OneWay}" Command="{Binding ShowDoneListCommand}" />
+        </StackPanel>
+
+        <!-- List -->
+        <Grid Grid.Row="3">
+            <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Text.Subtitle}" HorizontalAlignment="Center" Margin="0,60,0,0" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+                <ItemsControl ItemsSource="{Binding Groups}" Margin="0,0,0,24">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ItemGroupViewModel}">
+                            <Expander Style="{StaticResource Expander.Group}" IsExpanded="{Binding IsExpanded}">
+                                <Expander.Header>
+                                    <DockPanel LastChildFill="True">
+                                        <CheckBox DockPanel.Dock="Left" Margin="0,0,10,0" VerticalAlignment="Center" IsChecked="{Binding AllDone, Mode=OneWay}" Command="{Binding CompleteAllCommand}"
+                                                  Visibility="{Binding ShowHeaderCheck, Converter={StaticResource BoolToVis}}" ToolTip="Complete (or restore) the whole group" />
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" VerticalAlignment="Center"><TextBlock Text="{Binding CountLabel}" Style="{StaticResource Badge.Text}" /></Border>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Meta}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource Brush.Shop}" />
+                                        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOverdue}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Brush.Danger}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsToday}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" /></DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                </Expander.Header>
+                                <ItemsControl ItemsSource="{Binding Items}" Margin="0,4,0,6">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ItemRowViewModel}">
+                                            <Border Style="{StaticResource Row}">
+                                                <Border.InputBindings>
+                                                    <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditCommand}" />
+                                                </Border.InputBindings>
+                                                <Border.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="Edit" Command="{Binding EditCommand}" />
+                                                        <MenuItem Header="Complete / Restore" Command="{Binding ToggleCommand}" />
+                                                        <Separator />
+                                                        <MenuItem Header="Snooze" Command="{Binding SnoozeCommand}" />
+                                                        <MenuItem Header="Quiet (becomes Notify)" Command="{Binding QuietCommand}" />
+                                                        <MenuItem Header="Cancel snooze" Command="{Binding CancelSnoozeCommand}" Visibility="{Binding HasComingUp, Converter={StaticResource BoolToVis}}" />
+                                                        <MenuItem Header="Mute / unmute alerts" Command="{Binding MuteCommand}" />
+                                                        <Separator />
+                                                        <MenuItem Header="Delete" Command="{Binding DeleteCommand}" />
+                                                    </ContextMenu>
+                                                </Border.ContextMenu>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsDone, Mode=OneWay}" Command="{Binding ToggleCommand}" VerticalAlignment="Top" Margin="0,2,12,0" />
+                                                    <StackPanel Grid.Column="1">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0" Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}" />
+                                                            <TextBlock Text="{Binding Title}" FontSize="14" TextTrimming="CharacterEllipsis">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsDone}" Value="True"><Setter Property="TextDecorations" Value="Strikethrough" /><Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" /></DataTrigger>
+                                                                            <DataTrigger Binding="{Binding IsLocked}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Brush.Text.Tertiary}" /><Setter Property="FontStyle" Value="Italic" /></DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <Border Margin="8,0,0,0" Visibility="{Binding ShowPriority, Converter={StaticResource BoolToVis}}">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border" BasedOn="{StaticResource Pill}">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding PriorityKey}" Value="URGENT"><Setter Property="Background" Value="{StaticResource Brush.Priority.Urgent.Bg}" /></DataTrigger>
+                                                                            <DataTrigger Binding="{Binding PriorityKey}" Value="HIGH"><Setter Property="Background" Value="{StaticResource Brush.Priority.High.Bg}" /></DataTrigger>
+                                                                            <DataTrigger Binding="{Binding PriorityKey}" Value="MEDIUM"><Setter Property="Background" Value="{StaticResource Brush.Priority.Medium.Bg}" /></DataTrigger>
+                                                                            <DataTrigger Binding="{Binding PriorityKey}" Value="LOW"><Setter Property="Background" Value="{StaticResource Brush.Priority.Low.Bg}" /></DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock Text="{Binding PriorityLabel}">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Pill.Text}">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding PriorityKey}" Value="URGENT"><Setter Property="Foreground" Value="{StaticResource Brush.Priority.Urgent}" /></DataTrigger>
+                                                                                <DataTrigger Binding="{Binding PriorityKey}" Value="HIGH"><Setter Property="Foreground" Value="{StaticResource Brush.Priority.High}" /></DataTrigger>
+                                                                                <DataTrigger Binding="{Binding PriorityKey}" Value="MEDIUM"><Setter Property="Foreground" Value="{StaticResource Brush.Priority.Medium}" /></DataTrigger>
+                                                                                <DataTrigger Binding="{Binding PriorityKey}" Value="LOW"><Setter Property="Foreground" Value="{StaticResource Brush.Priority.Low}" /></DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding AlertGlyph}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Visibility="{Binding ShowAlert, Converter={StaticResource BoolToVis}}" ToolTip="Reminder type" />
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Subtitle}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Visibility="{Binding Subtitle, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Caption}">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsOverdue}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Brush.Danger}" /></DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding Notes}" Style="{StaticResource Text.Caption}" Margin="0,2,0,0" Foreground="{DynamicResource Brush.Text.Tertiary}" Visibility="{Binding HasNotes, Converter={StaticResource BoolToVis}}" />
+                                                        <ProgressBar Value="{Binding ProgressPct, Mode=OneWay}" Maximum="100" Height="4" Margin="0,6,0,0" Visibility="{Binding ShowProgress, Converter={StaticResource BoolToVis}}" />
+                                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0" Visibility="{Binding HasComingUp, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="&#xE823;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Brush.Accent}" Margin="0,0,5,0" />
+                                                            <TextBlock Text="{Binding ComingUp}" FontSize="12" Foreground="{DynamicResource Brush.Accent}" />
+                                                            <Button Style="{StaticResource Button.Link}" Content="&#xE8BB;" FontFamily="{StaticResource Font.Icons}" FontSize="9" Padding="4,0" Margin="6,0,0,0" Command="{Binding CancelSnoozeCommand}" ToolTip="Cancel the snooze" />
+                                                        </StackPanel>
+                                                        <TextBlock FontSize="11.5" Foreground="{DynamicResource Brush.Warning}" Margin="0,3,0,0" Visibility="{Binding HasMissed, Converter={StaticResource BoolToVis}}">
+                                                            <Run Text="Missed alerts: " /><Run Text="{Binding MissedCount, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,0">
+                                                        <StackPanel.Style>
+                                                            <Style TargetType="StackPanel">
+                                                                <Setter Property="Opacity" Value="0.25" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True"><Setter Property="Opacity" Value="1" /></DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </StackPanel.Style>
+                                                        <Button Style="{StaticResource Button.RowAction}" Content="&#xE71B;" Command="{Binding OpenUrlCommand}" ToolTip="Open link" Visibility="{Binding HasUrl, Converter={StaticResource BoolToVis}}" />
+                                                        <Button Style="{StaticResource Button.RowAction}" Content="&#xE823;" Command="{Binding SnoozeCommand}" ToolTip="Snooze" Visibility="{Binding IsDone, Converter={StaticResource InvBoolToVis}}" />
+                                                        <Button Style="{StaticResource Button.RowAction}" Content="&#xE70F;" Command="{Binding EditCommand}" ToolTip="Edit" />
+                                                        <Button Style="{StaticResource Button.RowAction}" Content="&#xE74D;" Command="{Binding DeleteCommand}" ToolTip="Delete" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

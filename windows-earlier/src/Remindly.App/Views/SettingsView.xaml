@@ -1,0 +1,167 @@
+<UserControl x:Class="Remindly.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Remindly.App.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="24,18,24,24" MaxWidth="820" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" Style="{StaticResource Text.Title}" />
+            <TextBlock Text="Cards marked SYNCED change the phone too. Cards marked THIS PC never leave this machine." Style="{StaticResource Text.Subtitle}" Margin="0,2,0,14" />
+
+            <!-- Account & sync -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}"><TextBlock Text="THIS PC" Style="{StaticResource Pill.Text}" /></Border><TextBlock Text="Account &amp; Cloud sync" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <TextBlock Text="{Binding AccountLine}" Style="{StaticResource Text.Body}" />
+                    <TextBlock Text="{Binding ProjectLine}" Style="{StaticResource Text.SettingsHint}" />
+                    <WrapPanel Margin="0,4,0,8">
+                        <Button Style="{StaticResource Button.Secondary}" Content="Google Desktop client…" Command="{Binding ConfigureClientCommand}" Margin="0,0,8,6" />
+                        <Button Style="{StaticResource Button.Primary}" Content="Sign in with Google" Command="{Binding SignInCommand}" Margin="0,0,8,6" Visibility="{Binding IsSignedIn, Converter={StaticResource InvBoolToVis}}" IsEnabled="{Binding HasClient}" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Sign out" Command="{Binding SignOutCommand}" Margin="0,0,8,6" Visibility="{Binding IsSignedIn, Converter={StaticResource BoolToVis}}" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Push pending now" Command="{Binding PushNowCommand}" Margin="0,0,8,6" Visibility="{Binding IsSignedIn, Converter={StaticResource BoolToVis}}" />
+                    </WrapPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Cloud sync on this PC (live, both ways, same Firestore as the phone)" IsChecked="{Binding CloudSync}" IsEnabled="{Binding IsSignedIn}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Also sync Cities · Chains · Products (needs the Android 2.9 Firestore rules)" IsChecked="{Binding CatalogueSync}" />
+                    <TextBlock Text="{Binding SyncStatus}" Style="{StaticResource Text.SettingsHint}" />
+                    <TextBlock Text="{Binding CollectionsText}" Style="{StaticResource Text.Mono}" Foreground="{DynamicResource Brush.Text.Secondary}" Visibility="{Binding IsSignedIn, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Alerts on this PC -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}"><TextBlock Text="THIS PC" Style="{StaticResource Pill.Text}" /></Border><TextBlock Text="Alerts on this PC" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Ring / notify on this PC (the phone always alerts on its own)" IsChecked="{Binding AlertsOnThisPc}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Play a soft chime for Notify alerts" IsChecked="{Binding SoundOnNotify}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="On start-up, summarise reminders that came due while Remindly was closed" IsChecked="{Binding ShowMissedSummary}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Start with Windows (minimised to the tray)" IsChecked="{Binding StartWithWindows}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Closing the window keeps Remindly in the tray" IsChecked="{Binding CloseToTray}" />
+                    <WrapPanel Margin="0,8,0,0">
+                        <TextBlock Text="Alert tests:" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Notification" Command="{Binding TestNotificationCommand}" Margin="0,0,6,0" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Ring" Command="{Binding TestRingCommand}" Margin="0,0,6,0" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Test Alarm" Command="{Binding TestAlarmCommand}" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Alerts (synced) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}" Background="{DynamicResource Brush.Accent.Subtle}"><TextBlock Text="SYNCED" Style="{StaticResource Pill.Text}" Foreground="{DynamicResource Brush.Accent}" /></Border><TextBlock Text="Alerts" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Alerts master switch" IsChecked="{Binding AlertsEnabled}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Text="TASKS" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding TriOptions}" SelectedValue="{Binding TasksAlertsOn}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="LEARN" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding TriOptions}" SelectedValue="{Binding LearnAlertsOn}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2" Margin="0,0,8,0"><TextBlock Text="BUY" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding TriOptions}" SelectedValue="{Binding ShopAlertsOn}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="3"><TextBlock Text="CALLS" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding TriOptions}" SelectedValue="{Binding CallsAlertsOn}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Text="SNOOZE (MINUTES)" Style="{StaticResource Text.Label}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding SnoozeMinutes, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="RING SOUND (SECONDS, 0 = UNTIL STOPPED)" Style="{StaticResource Text.Label}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding RingSeconds, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="ALARM SOUND (SECONDS, 0 = UNTIL DISMISSED)" Style="{StaticResource Text.Label}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding AlarmSeconds, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Adding items (synced) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}" Background="{DynamicResource Brush.Accent.Subtle}"><TextBlock Text="SYNCED" Style="{StaticResource Pill.Text}" Foreground="{DynamicResource Brush.Accent}" /></Border><TextBlock Text="Adding items" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Text="DEFAULT SCHEDULE" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding SchedOptions}" SelectedValue="{Binding SchedDefault}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="NEW ITEM DUE" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding DueModeOptions}" SelectedValue="{Binding GlobalNewDueMode}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2" Margin="0,0,8,0"><TextBlock Text="N DAYS" Style="{StaticResource Text.Label}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding GlobalNewDueDays, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="3"><TextBlock Text="DEFAULT DUE TIME" Style="{StaticResource Text.Label}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding DefaultDueText, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,0" Tag="18:00" /></StackPanel>
+                    </Grid>
+                    <CheckBox Style="{StaticResource Switch}" Content="New items carry a clock time (off = date-only, rings at the default due time)" IsChecked="{Binding GlobalNewDueTimed}" Margin="0,10,0,0" />
+                    <TextBlock Text="Per-tab overrides (Inherit / On / Off) stay as set on the phone; this PC honours them." Style="{StaticResource Text.SettingsHint}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Lists (synced) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}" Background="{DynamicResource Brush.Accent.Subtle}"><TextBlock Text="SYNCED" Style="{StaticResource Pill.Text}" Foreground="{DynamicResource Brush.Accent}" /></Border><TextBlock Text="Lists &amp; cards" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <WrapPanel>
+                        <CheckBox Style="{StaticResource Switch}" Content="Tasks tab" IsChecked="{Binding ShowTasks}" Margin="0,6,24,6" />
+                        <CheckBox Style="{StaticResource Switch}" Content="Learn tab" IsChecked="{Binding ShowLearn}" Margin="0,6,24,6" />
+                        <CheckBox Style="{StaticResource Switch}" Content="Calls tab" IsChecked="{Binding ShowCalls}" Margin="0,6,24,6" />
+                    </WrapPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Badges (due-today counts on the tabs)" IsChecked="{Binding Badges}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Checkbox on every group header (complete the whole group)" IsChecked="{Binding GroupHeaderCheck}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Show the Reminder-Type chip on cards" IsChecked="{Binding CardShowAlertType}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Show the Medium priority tag" IsChecked="{Binding ShowMediumTag}" />
+                    <TextBlock Text="GROUPS (TASKS)" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding TasksGroupsText, UpdateSourceTrigger=PropertyChanged}" Tag="Home, Work, Bills" />
+                    <TextBlock Text="GROUPS (BUY)" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding ShopGroupsText, UpdateSourceTrigger=PropertyChanged}" Tag="Grocery, Pharmacy" />
+                    <TextBlock Text="TOPICS (LEARN)" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding LearnTopicsText, UpdateSourceTrigger=PropertyChanged}" Tag="GenAI, System design" />
+                    <Button Style="{StaticResource Button.Secondary}" Content="Save groups &amp; topics" Command="{Binding SaveGroupsCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Shop mode (synced) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}" Background="{DynamicResource Brush.Accent.Subtle}"><TextBlock Text="SYNCED" Style="{StaticResource Pill.Text}" Foreground="{DynamicResource Brush.Accent}" /></Border><TextBlock Text="Shop mode" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <CheckBox Style="{StaticResource Switch}" Content="Checkout calculator when completing a buy item" IsChecked="{Binding ShopCheckoutCalc}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Cheapest-shop suggestion in the editor" IsChecked="{Binding ShopCheapestHint}" />
+                    <CheckBox Style="{StaticResource Switch}" Content="Geofence arrival alert (phone)" IsChecked="{Binding ShopArriveAlert}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Text="DEFAULT ARRIVAL ALERT" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding ArriveOptions}" SelectedValue="{Binding ShopArriveTypes}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="RE-ALERT COOLDOWN (MIN)" Style="{StaticResource Text.Label}" /><TextBox Style="{StaticResource TextBox.Base}" Text="{Binding ShopArriveCooldownMin, UpdateSourceTrigger=LostFocus}" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="DEFAULT RADIUS FOR NEW SHOPS" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding RadiusStops}" SelectedItem="{Binding ShopNewRadius}" Margin="0,4,0,0" /></StackPanel>
+                    </Grid>
+                    <TextBlock Text="WHATSAPP COUNTRY CODE" Style="{StaticResource Text.Field}" /><TextBox Style="{StaticResource TextBox.Base}" Width="90" HorizontalAlignment="Left" Text="{Binding DefaultCountryCode, UpdateSourceTrigger=LostFocus}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Appearance -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Appearance" Style="{StaticResource Text.SettingsSection}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Text="THEME (SYNCED)" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding ThemeOptions}" SelectedValue="{Binding Theme}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0"><TextBlock Text="TIME FORMAT (SYNCED)" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding TimeFormatOptions}" SelectedValue="{Binding TimeFormat}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" /></StackPanel>
+                        <StackPanel Grid.Column="2"><TextBlock Text="THIS PC'S THEME" Style="{StaticResource Text.Label}" /><ComboBox ItemsSource="{Binding ThemeOptions}" SelectedValue="{Binding LocalTheme}" SelectedValuePath="Key" DisplayMemberPath="Value" Margin="0,4,0,0" IsEnabled="{Binding ThemeFollowsPhone, Converter={StaticResource InvBool}}" /></StackPanel>
+                    </Grid>
+                    <CheckBox Style="{StaticResource Switch}" Content="This PC follows the synced theme (off = use this PC's own theme)" IsChecked="{Binding ThemeFollowsPhone}" Margin="0,10,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Personal PIN -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <DockPanel><Border DockPanel.Dock="Right" Style="{StaticResource Pill}"><TextBlock Text="THIS PC" Style="{StaticResource Pill.Text}" /></Border><TextBlock Text="Personal PIN" Style="{StaticResource Text.SettingsSection}" /></DockPanel>
+                    <TextBlock Text="Items marked Personal hide behind a PIN. The PIN is per device — the phone keeps its own." Style="{StaticResource Text.SettingsHint}" />
+                    <WrapPanel><TextBlock Text="{Binding PinStatus}" VerticalAlignment="Center" Margin="0,0,12,0" /><Button Style="{StaticResource Button.Secondary}" Content="Set / change PIN" Command="{Binding SetPinCommand}" Margin="0,0,6,0" /><Button Style="{StaticResource Button.Ghost}" Content="Remove PIN" Command="{Binding ClearPinCommand}" /></WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Data -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="Backup &amp; data" Style="{StaticResource Text.SettingsSection}" />
+                    <TextBlock Text="The data file is the same format the phone exports and imports (Settings → Backup &amp; Restore). Import merges: nothing is deleted, newer wins." Style="{StaticResource Text.SettingsHint}" />
+                    <WrapPanel>
+                        <Button Style="{StaticResource Button.Secondary}" Content="Export data…" Command="{Binding ExportDataCommand}" Margin="0,0,6,6" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Export settings…" Command="{Binding ExportSettingsCommand}" Margin="0,0,6,6" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Import…" Command="{Binding ImportCommand}" Margin="0,0,6,6" />
+                        <Button Style="{StaticResource Button.Ghost}" Content="Open data folder" Command="{Binding OpenDataFolderCommand}" Margin="0,0,6,6" />
+                        <Button Style="{StaticResource Button.Ghost}" Content="Show error log" Command="{Binding ShowLogCommand}" Margin="0,0,6,6" />
+                    </WrapPanel>
+                    <TextBox Style="{StaticResource TextBox.Log}" Text="{Binding LogTail, Mode=OneWay}" IsReadOnly="True" MaxHeight="220" VerticalScrollBarVisibility="Auto" Visibility="{Binding LogTail, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="{Binding VersionLine}" Style="{StaticResource Text.Caption}" />
+            <TextBlock Style="{StaticResource Text.Caption}"><Run Text="Data folder: " /><Run Text="{Binding DataFolder, Mode=OneWay}" FontFamily="{StaticResource Font.Mono}" /></TextBlock>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
